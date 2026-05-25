@@ -1,6 +1,11 @@
 "use client";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import {
+  UploadCloud, X, Sparkles, Loader2, Send, CalendarClock, Save,
+  FileText, ImageIcon, Copy, Trash2, Check, AlertCircle, PenSquare,
+  Wand2, ChevronDown,
+} from "lucide-react";
 
 const TONES = [
   { value: "professional", label: "Professional", emoji: "💼" },
@@ -20,6 +25,7 @@ function CreatePostPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const editPostId = searchParams?.get("edit");
+  const defaultTab = searchParams?.get("tab") || "manual";
 
   const [prompt, setPrompt] = useState("");
   const [tone, setTone] = useState("professional");
@@ -29,978 +35,711 @@ function CreatePostPageContent() {
   const [includeEmojis, setIncludeEmojis] = useState(true);
   const [generatedContent, setGeneratedContent] = useState("");
   const [options, setOptions] = useState([]);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("ai"); // 'ai' or 'manual'
+  const [activeTab, setActiveTab] = useState(defaultTab);
   const [errorMsg, setErrorMsg] = useState("");
   const [warningMsg, setWarningMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-
-  // Scheduling states
-  const [showScheduler, setShowScheduler] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
-
-  // Edit Mode state
+  const [copied, setCopied] = useState(false);
+  const [userProfile, setUserProfile] = useState({ name: "You", headline: "LinkedIn Creator", avatar: "" });
+  const [scheduledAt, setScheduledAt] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [postStatus, setPostStatus] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const fileInputRef = useRef(null);
+  const aiFileInputRef = useRef(null);
 
-  // Fetch post details if in edit mode
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data) {
+          setUserProfile({ name: d.data.full_name || "You", headline: d.data.headline || "LinkedIn Creator", avatar: d.data.profile_picture || "" });
+        }
+      })
+      .catch(console.error);
+  }, []);
+
   useEffect(() => {
     if (editPostId) {
       setIsEditMode(true);
-      setActiveTab("manual"); // default to editor for editing
-      const fetchPostDetails = async () => {
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, {
-            credentials: "include"
-          });
-          const data = await res.json();
-          if (data.success && data.data) {
-            const post = data.data;
+      setActiveTab("manual");
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, { credentials: "include" })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && d.data) {
+            const post = d.data;
             setGeneratedContent(post.content);
             setPostStatus(post.status);
             if (post.ai_prompt) setPrompt(post.ai_prompt);
-            
-            // Set image preview if post has images
-            if (post.post_images && post.post_images.length > 0) {
-              setPreviewUrl(post.post_images[0].image_url);
+            if (post.post_images?.length) {
+              setAttachments(post.post_images.map((img) => ({ id: img.id, previewUrl: img.image_url, name: img.alt_text || "Attached Image", isExisting: true })));
             }
-
-            // Set schedule details if scheduled
             if (post.status === "scheduled" && post.scheduled_at) {
               const dateObj = new Date(post.scheduled_at);
-              // Format to YYYY-MM-DD
-              const yyyy = dateObj.getFullYear();
-              const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-              const dd = String(dateObj.getDate()).padStart(2, "0");
-              setScheduledDate(`${yyyy}-${mm}-${dd}`);
-              
-              // Format to HH:MM
-              const hh = String(dateObj.getHours()).padStart(2, "0");
-              const min = String(dateObj.getMinutes()).padStart(2, "0");
-              setScheduledTime(`${hh}:${min}`);
+              const pad = (n) => String(n).padStart(2, "0");
+              setScheduledAt(`${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`);
             }
           }
-        } catch (err) {
-          console.error("Error loading post for editing:", err);
-        }
-      };
-      fetchPostDetails();
+        })
+        .catch(() => setErrorMsg("Could not load post for editing."));
     }
   }, [editPostId]);
 
-  const handleDeletePost = async () => {
-    if (!editPostId) return;
-    if (!confirm("Are you sure you want to delete this post?")) return;
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSuccessMsg("Post deleted successfully!");
-        setTimeout(() => router.push("/dashboard/posts"), 1000);
+  const removeAttachment = (id) => setAttachments((prev) => prev.filter((a) => a.id !== id));
+
+  const addFilesToAttachments = (files) => {
+    const newAtts = [];
+    for (const f of files) {
+      if (f.size > 10 * 1024 * 1024) { setErrorMsg(`File too large: ${f.name}`); continue; }
+      if (f.type.startsWith("image/") || f.type === "application/pdf") {
+        newAtts.push({ id: `new_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, file: f, previewUrl: URL.createObjectURL(f), name: f.name, isExisting: false, type: f.type });
       } else {
-        setErrorMsg("Failed to delete post: " + (data.error || "Unknown error"));
+        setErrorMsg("Please upload valid image or PDF files.");
       }
-    } catch (err) {
-      console.error("Delete error:", err);
-      setErrorMsg("Error deleting post.");
     }
+    if (newAtts.length) { setAttachments((prev) => [...prev, ...newAtts].slice(0, 10)); setErrorMsg(""); }
   };
 
-  // Image upload state
-  const [imageFile, setImageFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const fileInputRef = useRef(null);
-
-  const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (!selected) return;
-
-    if (selected.size > 10 * 1024 * 1024) {
-      setErrorMsg("File size exceeds 10MB limit.");
-      return;
-    }
-
-    if (selected.type.startsWith("image/") || selected.type === "application/pdf") {
-      setImageFile(selected);
-      setPreviewUrl(URL.createObjectURL(selected));
-      setErrorMsg(""); // Clear error if successful
-    } else {
-      setErrorMsg("Please upload a valid image or PDF file.");
-    }
-  };
-
-  const removeImage = () => {
-    setImageFile(null);
-    setPreviewUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-  
-  const isPdf = imageFile?.type === "application/pdf" || !!(previewUrl && previewUrl.toLowerCase().split('?')[0].endsWith('.pdf'));
-
-  const getPdfName = () => {
-    if (imageFile) return imageFile.name;
-    if (previewUrl) {
+  const getCleanName = (att) => {
+    if (att.file) return att.file.name;
+    if (att.previewUrl) {
       try {
-        const decoded = decodeURIComponent(previewUrl);
-        const parts = decoded.split('/');
-        const lastPart = parts[parts.length - 1].split('?')[0];
-        const match = lastPart.match(/^\d+-(.+)$/);
-        return match ? match[1] : lastPart;
-      } catch (e) {
-        return "Document.pdf";
-      }
+        const parts = decodeURIComponent(att.previewUrl).split("/");
+        const last = parts[parts.length - 1].split("?")[0];
+        const m = last.match(/^\d+-(.+)$/);
+        return m ? m[1] : last;
+      } catch { return att.name || "Document.pdf"; }
     }
-    return "Document.pdf";
+    return att.name || "Document.pdf";
   };
 
   const handleGenerate = async () => {
-    // If no image and no prompt, do nothing
-    if (!prompt.trim() && !imageFile) return;
-    setLoading(true);
-    setOptions([]);
-    setErrorMsg("");
-    setWarningMsg("");
-
+    const fileToAnalyze = attachments[0]?.file;
+    if (!prompt.trim() && !fileToAnalyze) { setErrorMsg("Enter a prompt or attach a file."); return; }
+    setLoading(true); setOptions([]); setErrorMsg(""); setWarningMsg("");
     try {
-      if (imageFile) {
-        // Photo / PDF Analyzer mode
+      if (fileToAnalyze) {
         const formData = new FormData();
-        formData.append("image", imageFile);
-        formData.append("tone", tone);
-        formData.append("length", length);
-        formData.append("includeHashtags", includeHashtags);
-        formData.append("includeEmojis", includeEmojis);
+        formData.append("image", fileToAnalyze);
+        formData.append("tone", tone); formData.append("length", length);
+        formData.append("includeHashtags", includeHashtags); formData.append("includeEmojis", includeEmojis);
         formData.append("additionalPrompt", prompt);
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/analyze-image`, {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/analyze-image`, { method: "POST", credentials: "include", body: formData });
         const data = await res.json();
         if (data.success) {
-          const generatedOpts = data.data.options || [];
-          setOptions(generatedOpts);
-          setSelectedOptionIndex(0);
-          if (generatedOpts.length > 0) {
-            setGeneratedContent(generatedOpts[0].content);
-          }
-          // Show notice if Gemini was unavailable and pdf-parse was used
-          if (data.data.pdfFallbackUsed) {
-            setWarningMsg("⚠️ Gemini vision was unavailable — used text extraction instead. Results may be less detailed for scanned PDFs.");
-          }
-        } else {
-          setErrorMsg(data.error || "Failed to analyze file. Please try again.");
-        }
+          const opts = (data.data.options || []).map((o) => ({ ...o, metadata: { title: data.data.title || "", org: data.data.organization || "", date: data.data.date || "" } }));
+          setOptions(opts);
+          if (opts.length) setGeneratedContent(opts[0].content);
+          if (data.data.pdfFallbackUsed) setWarningMsg("⚠️ Vision unavailable — text extraction used instead.");
+        } else { setErrorMsg(data.error || "Failed to analyze file."); }
       } else {
-        // Standard Text AI mode
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/generate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ prompt, tone, length, industry, includeHashtags, includeEmojis }),
-        });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ prompt, tone, length, industry, includeHashtags, includeEmojis }) });
         const data = await res.json();
         if (data.success) {
-          const generatedOpts = data.data.options || [];
-          setOptions(generatedOpts);
-          setSelectedOptionIndex(0);
-          if (generatedOpts.length > 0) {
-            setGeneratedContent(generatedOpts[0].content);
-          }
-        } else {
-          setErrorMsg(data.error || "Failed to generate post. Please try again.");
-        }
+          const opts = data.data.options || [];
+          setOptions(opts);
+          if (opts.length) setGeneratedContent(opts[0].content);
+        } else { setErrorMsg(data.error || "Failed to generate."); }
       }
-    } catch (err) {
-      console.error("Generation error:", err);
-      setErrorMsg("Could not connect to AI service. Make sure the backend is running.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveDraft = async () => {
-    await savePost("draft");
-  };
-
-  const handlePublishNow = async () => {
-    if (!confirm("Are you sure you want to publish this to LinkedIn immediately?")) return;
-    await savePost("publish");
-  };
-
-  const handleSchedule = async () => {
-    setErrorMsg("");
-    setSuccessMsg("");
-    
-    if (!scheduledDate || !scheduledTime) {
-      setErrorMsg("Please select a date and time to schedule this post.");
-      setShowScheduler(true);
-      return;
-    }
-
-    const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
-    if (isNaN(scheduledDateTime.getTime())) {
-      setErrorMsg("Please select a valid date and time.");
-      return;
-    }
-
-    if (scheduledDateTime <= new Date()) {
-      setErrorMsg("Scheduled time must be in the future.");
-      return;
-    }
-
-    await savePost("schedule", scheduledDateTime.toISOString());
+    } catch { setErrorMsg("Could not connect to AI service. Ensure the backend is running."); }
+    finally { setLoading(false); }
   };
 
   const savePost = async (action, scheduledAtString = null) => {
-    setErrorMsg("");
-    setSuccessMsg("");
-    
-    // The final post content is always stored in generatedContent (both in AI mode and Manual mode)
-    const content = generatedContent;
-    if (!content.trim()) {
-      setErrorMsg("Post content cannot be empty.");
-      return;
-    }
-
+    setErrorMsg(""); setSuccessMsg("");
+    if (!generatedContent.trim()) { setErrorMsg("Post content cannot be empty."); return; }
     try {
       const url = isEditMode
         ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`
         : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts`;
-        
       const method = isEditMode ? "PATCH" : "POST";
-      
-      const payload = {
-        content,
-        aiGenerated: !!generatedContent,
-        aiPrompt: prompt,
-      };
+      const payload = { content: generatedContent, aiGenerated: !!(options?.length), aiPrompt: prompt };
+      if (action === "schedule") { payload.status = "scheduled"; payload.scheduledAt = scheduledAtString; }
+      else if (action === "draft") { payload.status = "draft"; if (isEditMode) payload.scheduledAt = null; }
 
-      if (action === "schedule") {
-        payload.status = "scheduled";
-        payload.scheduledAt = scheduledAtString;
-      } else if (action === "draft") {
-        payload.status = "draft";
-        // Reset scheduled_at to null if they change status to draft
-        if (isEditMode) {
-          payload.scheduledAt = null;
-        }
-      }
-
-      // 1. Create or Update Post
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-      
-      // If unauthorized, redirect to login
-      if (res.status === 401) {
-        window.location.href = "http://localhost:5000/api/auth/linkedin";
-        return;
-      }
-
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(payload) });
+      if (res.status === 401) { window.location.href = "http://localhost:5000/api/auth/linkedin"; return; }
       const data = await res.json();
-      
-      if (!data.success) {
-        setErrorMsg("Failed to save post: " + (data.error || "Unknown error"));
-        return;
-      }
-      
+      if (!data.success) { setErrorMsg("Failed to save: " + (data.error || "Unknown error")); return; }
+
       const postId = isEditMode ? editPostId : data.data.id;
+      const keepIds = attachments.filter((a) => a.isExisting).map((a) => String(a.id));
+      const newFiles = attachments.filter((a) => !a.isExisting && a.file).map((a) => a.file);
+      const imgForm = new FormData();
+      imgForm.append("keepImageIds", JSON.stringify(keepIds));
+      newFiles.forEach((f) => imgForm.append("images", f));
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/images`, { method: "POST", credentials: "include", body: imgForm });
 
-      // 2. Upload media (image or PDF) if present
-      if (imageFile) {
-        const imageFormData = new FormData();
-        imageFormData.append("image", imageFile);
-        
-        const imgRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/images`, {
-          method: "POST",
-          credentials: "include",
-          body: imageFormData,
-        });
-        
-        if (!imgRes.ok) {
-          const imgErr = await imgRes.json().catch(() => ({}));
-          setErrorMsg("Post saved, but file failed to upload: " + (imgErr.error || imgRes.statusText));
-          return;
-        }
-      }
-
-      // 3. Publish if requested immediately
       if (action === "publish") {
-        const publishRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/publish`, {
-          method: "POST",
-          credentials: "include",
-        });
-        const publishData = await publishRes.json();
-        if (publishData.success) {
-          setSuccessMsg("Successfully published to LinkedIn!");
-          setTimeout(() => router.push("/dashboard/posts"), 1000);
-        } else {
-          setErrorMsg("Saved but failed to publish: " + publishData.error);
-        }
+        const pub = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/publish`, { method: "POST", credentials: "include" });
+        const pubData = await pub.json();
+        if (pubData.success) { setSuccessMsg("Published to LinkedIn!"); setTimeout(() => router.push("/dashboard/posts"), 1000); }
+        else setErrorMsg("Saved but publish failed: " + pubData.error);
       } else {
-        setSuccessMsg(isEditMode ? "Post updated successfully!" : "Post saved successfully!");
+        setSuccessMsg(isEditMode ? "Updated successfully!" : "Saved successfully!");
         setTimeout(() => router.push("/dashboard/posts"), 1000);
       }
-      
-    } catch (err) {
-      console.error("Save error:", err);
-      setErrorMsg("Error saving post. Ensure the backend is running.");
-    }
+    } catch { setErrorMsg("Error saving post. Ensure backend is running."); }
+  };
+
+  const handlePublishNow = async () => { if (confirm("Publish to LinkedIn now?")) await savePost("publish"); };
+  const handleSaveDraft = async () => { await savePost("draft"); };
+  const handleSchedule = async () => {
+    setErrorMsg(""); setSuccessMsg("");
+    if (!scheduledAt) { setErrorMsg("Please select a schedule date and time."); return; }
+    const dt = new Date(scheduledAt);
+    if (isNaN(dt.getTime())) { setErrorMsg("Invalid date/time."); return; }
+    if (dt <= new Date()) { setErrorMsg("Scheduled time must be in the future."); return; }
+    await savePost("schedule", dt.toISOString());
+  };
+
+  const handleDeletePost = async () => {
+    if (!editPostId || !confirm("Delete this post?")) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, { method: "DELETE", credentials: "include" });
+      const data = await res.json();
+      if (data.success) { setSuccessMsg("Deleted!"); setTimeout(() => router.push("/dashboard/posts"), 1000); }
+      else setErrorMsg("Failed to delete: " + (data.error || "Unknown"));
+    } catch { setErrorMsg("Error deleting post."); }
+  };
+
+  const copyToClipboard = () => {
+    if (!generatedContent) return;
+    navigator.clipboard.writeText(generatedContent);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleUseOptionText = (text) => {
+    setGeneratedContent(text); setActiveTab("manual");
+    setSuccessMsg("Draft imported into editor!"); setTimeout(() => setSuccessMsg(""), 4000);
   };
 
   return (
-    <div className="animate-fade-in">
-      <div style={{ marginBottom: 36, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in text-foreground">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-border pb-6">
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>
-              {isEditMode ? "Edit Post" : "Create Post"}
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground font-sans">
+              {isEditMode ? "Edit Post" : "Compose Post"}
             </h1>
             {isEditMode && postStatus && (
-              <span className={`badge badge-${postStatus}`} style={{ textTransform: "capitalize", padding: "4px 10px", borderRadius: "var(--radius-sm)", fontSize: 12, fontWeight: 600 }}>
-                {postStatus}
+              <span className={`badge-${
+                postStatus === "published" ? "success" : postStatus === "scheduled" ? "warning" : "muted"
+              }`}>
+                {postStatus.toUpperCase()}
               </span>
             )}
           </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: 15 }}>
-            {isEditMode 
-              ? "Modify your draft or scheduled post details, reschedule, or delete it."
-              : "Write manually, attach an image to analyze, or let AI craft the perfect LinkedIn post."}
+          <p className="text-sm text-muted-foreground mt-2">
+            {isEditMode ? "Modify your post, adjust schedule, or delete it." : "Write manually or let AI craft it from a certificate or prompt."}
           </p>
         </div>
         {isEditMode && (
-          <button 
-            onClick={handleDeletePost} 
-            className="btn-secondary" 
-            style={{ 
-              padding: "10px 20px", 
-              color: "#EF4444", 
-              background: "rgba(239, 68, 68, 0.1)", 
-              border: "1px solid rgba(239, 68, 68, 0.2)",
-              fontWeight: 600,
-              cursor: "pointer",
-              borderRadius: "var(--radius-md)",
-              fontFamily: "inherit"
-            }}
-          >
-            🗑️ Delete Post
+          <button onClick={handleDeletePost} className="btn-secondary text-destructive border-destructive/20 hover:bg-destructive-light hover:text-destructive transition-all duration-200">
+            <Trash2 className="size-4" /> Delete Post
           </button>
         )}
       </div>
 
-      {/* Tab Switcher */}
-      <div
-        style={{
-          display: "flex",
-          gap: 4,
-          padding: 4,
-          background: "var(--bg-secondary)",
-          borderRadius: "var(--radius-md)",
-          marginBottom: 32,
-          width: "fit-content",
-        }}
-      >
+      {/* Tabs */}
+      <div className="flex h-11 items-center gap-1 rounded-xl bg-white border border-border p-1 max-w-xs shadow-sm">
         {[
-          { id: "ai", label: "🤖 AI Generate / Analyze" },
-          { id: "manual", label: "✍️ Write Manually" },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: "10px 24px",
-              borderRadius: "var(--radius-sm)",
-              border: "none",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              background: activeTab === tab.id ? "var(--bg-tertiary)" : "transparent",
-              color: activeTab === tab.id ? "var(--text-primary)" : "var(--text-muted)",
-              transition: "all 0.2s ease",
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+          { id: "manual", label: "✍️ Manual Creator" },
+          { id: "ai", label: "🤖 AI Generator" },
+        ].map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-2 h-full rounded-lg text-sm font-semibold transition-all duration-300 border-none cursor-pointer ${
+                active 
+                  ? "bg-primary text-white shadow-sm" 
+                  : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground bg-transparent"
+              }`}
+            >
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Error / Warning / Success banners */}
+      {/* Banners */}
       {successMsg && (
-        <div style={{
-          padding: "12px 18px", borderRadius: "var(--radius-md)", marginBottom: 20,
-          background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.3)",
-          color: "#10B981", fontSize: 14, fontWeight: 500, display: "flex", alignItems: "center", gap: 10,
-        }}>
-          <span>✅</span>
-          <span>{successMsg}</span>
-          <button onClick={() => setSuccessMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", color: "#10B981", cursor: "pointer", fontSize: 18 }}>×</button>
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-success-light border border-success/20 text-success-foreground text-sm font-medium animate-slide-down">
+          <Check className="size-5 text-success shrink-0" />
+          <span className="flex-1 text-emerald-800">{successMsg}</span>
+          <button onClick={() => setSuccessMsg("")} className="text-success hover:opacity-75 cursor-pointer bg-transparent border-none text-xl leading-none font-bold">×</button>
         </div>
       )}
       {errorMsg && (
-        <div style={{
-          padding: "14px 18px", borderRadius: "var(--radius-md)", marginBottom: 20,
-          background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
-          color: "#EF4444", fontSize: 14, fontWeight: 500, display: "flex",
-          alignItems: "flex-start", gap: 10,
-        }}>
-          <span style={{ fontSize: 18, flexShrink: 0 }}>❌</span>
-          <div>
-            <strong>Error:</strong> {errorMsg}
-            <div style={{ marginTop: 6, fontSize: 12, color: "#F87171" }}>
-              If this is a Gemini quota error, the daily limit has been reached. PDFs will still work via text extraction. Images require Gemini vision.
-            </div>
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-destructive-light border border-destructive/20 text-destructive-foreground text-sm font-medium animate-slide-down">
+          <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+          <div className="flex-1 text-red-800">
+            <strong className="font-bold">Error:</strong> {errorMsg}
+            <div className="text-xs opacity-80 mt-1 font-normal">Ensure your LinkedIn profile is connected and the backend is running.</div>
           </div>
-          <button onClick={() => setErrorMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", color: "#EF4444", cursor: "pointer", fontSize: 18, flexShrink: 0 }}>×</button>
+          <button onClick={() => setErrorMsg("")} className="text-destructive hover:opacity-75 cursor-pointer bg-transparent border-none text-xl leading-none font-bold">×</button>
         </div>
       )}
       {warningMsg && (
-        <div style={{
-          padding: "12px 18px", borderRadius: "var(--radius-md)", marginBottom: 20,
-          background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",
-          color: "#F59E0B", fontSize: 13, display: "flex", alignItems: "center", gap: 10,
-        }}>
-          <span>{warningMsg}</span>
-          <button onClick={() => setWarningMsg("")} style={{ marginLeft: "auto", background: "none", border: "none", color: "#F59E0B", cursor: "pointer", fontSize: 18 }}>×</button>
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-warning-light border border-warning/20 text-warning-foreground text-sm font-medium animate-slide-down">
+          <AlertCircle className="size-5 text-warning shrink-0" />
+          <span className="flex-1 text-amber-800">{warningMsg}</span>
+          <button onClick={() => setWarningMsg("")} className="text-warning hover:opacity-75 cursor-pointer bg-transparent border-none text-xl leading-none font-bold">×</button>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
-        {/* LEFT: Input Area */}
-        <div>
-          {/* Universal Image Upload (for both tabs) */}
-          <div className="card" style={{ padding: 24, marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <label style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
-                Attach Image or PDF (Optional)
-              </label>
-              {previewUrl && (
-                <button onClick={removeImage} style={{ fontSize: 12, color: "#EF4444", background: "transparent", border: "none", cursor: "pointer", fontWeight: 600 }}>
-                  Remove File
-                </button>
-              )}
-            </div>
-            
-            <div 
-              onClick={() => !previewUrl && fileInputRef.current?.click()}
-              style={{
-                border: "2px dashed var(--border-default)",
-                borderRadius: "var(--radius-lg)",
-                padding: previewUrl ? 8 : 24,
-                textAlign: "center",
-                cursor: previewUrl ? "default" : "pointer",
-                background: "var(--bg-tertiary)",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: 120
-              }}
-            >
-              {previewUrl ? (
-                isPdf ? (
-                  <div style={{ padding: 20, textAlign: "center" }}>
-                    <div style={{ fontSize: 40, marginBottom: 8 }}>📄</div>
-                    <div style={{ fontWeight: 600 }}>{getPdfName()}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>PDF Document Ready</div>
-                  </div>
-                ) : (
-                  <img src={previewUrl} alt="Preview" style={{ width: "100%", maxHeight: 200, objectFit: "contain", borderRadius: "var(--radius-md)" }} />
-                )
-              ) : (
-                <>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}>📎</div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>Click to attach an image or PDF</div>
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>JPEG, PNG, GIF, PDF up to 10MB (1-5 pages best)</div>
-                </>
-              )}
-            </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              accept="image/*,.pdf,application/pdf" 
-              style={{ display: "none" }} 
-            />
-          </div>
-
-          {activeTab === "ai" ? (
-            <>
-              {/* Prompt */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 8, color: "var(--text-secondary)" }}>
-                  {imageFile ? "Image Context (optional)" : "What should the post be about?"}
+      {/* ===== MANUAL TAB ===== */}
+      {activeTab === "manual" ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left: Editor */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* Text Editor */}
+            <div className="glass p-6 rounded-2xl space-y-4 bg-white">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Post Content
                 </label>
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                  generatedContent.length > 2800 ? "bg-destructive-light text-destructive border border-destructive/10" : "bg-secondary text-muted-foreground border border-border"
+                }`}>
+                  {generatedContent.length} / 3000 chars
+                </span>
+              </div>
+              <div className="border border-border rounded-xl p-4 bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all duration-200">
                 <textarea
-                  className="input"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={imageFile ? "Add any specific instructions for the photo analyzer..." : "e.g., Share my experience of transitioning from engineering..."}
-                  style={{ minHeight: 120 }}
-                />
-              </div>
-
-              {/* Tone Selection */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 10, color: "var(--text-secondary)" }}>
-                  Tone
-                </label>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {TONES.map((t) => (
-                    <button
-                      key={t.value}
-                      onClick={() => setTone(t.value)}
-                      style={{
-                        padding: "8px 16px",
-                        borderRadius: "var(--radius-full)",
-                        border: `1px solid ${tone === t.value ? "var(--brand-primary)" : "var(--border-default)"}`,
-                        background: tone === t.value ? "rgba(10, 102, 194, 0.15)" : "var(--bg-tertiary)",
-                        color: tone === t.value ? "var(--brand-primary-light)" : "var(--text-secondary)",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      {t.emoji} {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Length Selection */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 10, color: "var(--text-secondary)" }}>
-                  Length
-                </label>
-                <div style={{ display: "flex", gap: 8 }}>
-                  {LENGTHS.map((l) => (
-                    <button
-                      key={l.value}
-                      onClick={() => setLength(l.value)}
-                      style={{
-                        flex: 1,
-                        padding: "12px 16px",
-                        borderRadius: "var(--radius-md)",
-                        border: `1px solid ${length === l.value ? "var(--brand-primary)" : "var(--border-default)"}`,
-                        background: length === l.value ? "rgba(10, 102, 194, 0.15)" : "var(--bg-tertiary)",
-                        color: length === l.value ? "var(--brand-primary-light)" : "var(--text-secondary)",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        textAlign: "center",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <div style={{ fontWeight: 600 }}>{l.label}</div>
-                      <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>{l.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Options */}
-              <div style={{ display: "flex", gap: 24, marginBottom: 32 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: "var(--text-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={includeHashtags}
-                    onChange={(e) => setIncludeHashtags(e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: "var(--brand-primary)" }}
-                  />
-                  Include hashtags
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14, color: "var(--text-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={includeEmojis}
-                    onChange={(e) => setIncludeEmojis(e.target.checked)}
-                    style={{ width: 16, height: 16, accentColor: "var(--brand-primary)" }}
-                  />
-                  Include emojis
-                </label>
-              </div>
-
-              {/* Generate Button */}
-              <button
-                onClick={handleGenerate}
-                disabled={(!prompt.trim() && !imageFile) || loading}
-                className="btn-primary"
-                style={{
-                  width: "100%",
-                  justifyContent: "center",
-                  padding: "16px",
-                  fontSize: 16,
-                  opacity: (!prompt.trim() && !imageFile) || loading ? 0.5 : 1,
-                  cursor: (!prompt.trim() && !imageFile) || loading ? "not-allowed" : "pointer",
-                }}
-              >
-                {loading ? (
-                  <>⏳ {imageFile ? (imageFile.type === "application/pdf" ? "Analyzing PDF..." : "Analyzing Image...") : "Generating..."}</>
-                ) : (
-                  <>🤖 {imageFile ? (imageFile.type === "application/pdf" ? "Analyze PDF & Generate" : "Analyze Image & Generate") : "Generate with AI"}</>
-                )}
-              </button>
-            </>
-          ) : (
-            /* Manual Write Mode */
-            <div>
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 8, color: "var(--text-secondary)" }}>
-                  Write your post
-                </label>
-                <textarea
-                  className="input"
                   value={generatedContent}
                   onChange={(e) => setGeneratedContent(e.target.value)}
-                  placeholder="Start writing your LinkedIn post here..."
-                  style={{ minHeight: 300 }}
+                  rows={12}
+                  placeholder="What's the unexpected lesson you want to share? Start writing here or use AI Generator..."
+                  className="w-full resize-none border-none outline-none text-[15px] leading-relaxed text-foreground bg-transparent font-sans placeholder-muted-foreground"
                 />
               </div>
-              {showScheduler && (
-                <div style={{ marginBottom: 20, padding: 16, background: "var(--bg-tertiary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)" }}>
-                  <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: "var(--text-primary)" }}>⏰ Schedule Post</h4>
-                  <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>Date</label>
-                      <input 
-                        type="date" 
-                        value={scheduledDate} 
-                        onChange={(e) => setScheduledDate(e.target.value)} 
-                        style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-card)", color: "var(--text-primary)" }}
-                      />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: "block", fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>Time</label>
-                      <input 
-                        type="time" 
-                        value={scheduledTime} 
-                        onChange={(e) => setScheduledTime(e.target.value)} 
-                        style={{ width: "100%", padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-card)", color: "var(--text-primary)" }}
-                      />
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={handleSchedule} className="btn-primary" style={{ flex: 1, padding: "8px 12px", fontSize: 12, justifyContent: "center" }}>Confirm Schedule</button>
-                    <button onClick={() => setShowScheduler(false)} className="btn-secondary" style={{ flex: 1, padding: "8px 12px", fontSize: 12, justifyContent: "center" }}>Cancel</button>
-                  </div>
-                </div>
-              )}
-              {/* Attached file indicator */}
-              {previewUrl && (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 14px", marginBottom: 12,
-                  background: "rgba(10,102,194,0.08)",
-                  border: "1px solid rgba(10,102,194,0.2)",
-                  borderRadius: "var(--radius-md)"
-                }}>
-                  <span style={{ fontSize: 20 }}>
-                    {isPdf ? "📄" : "🖼️"}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {isPdf ? getPdfName() : (imageFile ? imageFile.name : "Attached Image")}
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                      {isPdf ? "PDF will be attached to post" : "Image will be attached to post"}{imageFile ? ` · ${(imageFile.size / 1024).toFixed(0)} KB` : ""}
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "2px 8px", borderRadius: 99 }}>
-                    ✓ Will attach
-                  </span>
-                </div>
-              )}
-              <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={handleSaveDraft} className="btn-secondary" style={{ flex: 1, justifyContent: "center", fontSize: 13 }}>
-                  💾 Save Draft
-                </button>
-                <button onClick={() => setShowScheduler(!showScheduler)} className="btn-secondary" style={{ flex: 1, justifyContent: "center", fontSize: 13, background: showScheduler ? "rgba(10, 102, 194, 0.1)" : "transparent" }}>
-                  ⏰ Schedule
-                </button>
-                <button onClick={handlePublishNow} className="btn-primary" style={{ flex: 1, justifyContent: "center", fontSize: 13 }}>
-                  🚀 Publish Now
-                </button>
+              <div className="flex justify-between items-center text-xs text-muted-foreground pt-1">
+                <span>Tip: lead with a strong hook in your first line.</span>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* RIGHT: Preview */}
-        <div>
-          <div
-            style={{
-              padding: 32,
-              borderRadius: "var(--radius-lg)",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-default)",
-              minHeight: 400,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text-secondary)" }}>
-                📱 Post Preview
-              </h3>
-              {generatedContent && (
-                <button
-                  onClick={() => navigator.clipboard.writeText(generatedContent)}
-                  className="btn-secondary"
-                  style={{ padding: "6px 14px", fontSize: 12 }}
-                >
-                  📋 Copy
-                </button>
+            {/* Media Upload */}
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); addFilesToAttachments(Array.from(e.dataTransfer.files)); }}
+              className="glass p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-all duration-200 bg-white"
+            >
+              {attachments.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="w-12 h-12 rounded-xl bg-primary-light flex items-center justify-center mx-auto mb-4 border border-primary/15 shadow-sm">
+                    <UploadCloud className="size-6 text-primary" />
+                  </div>
+                  <div className="font-bold text-sm text-foreground mb-1">Drag & drop files here</div>
+                  <div className="text-xs text-muted-foreground mb-4">PDF certificate or images · max 10MB each</div>
+                  <label className="btn-secondary py-2 px-4 text-xs font-bold cursor-pointer border border-border rounded-lg shadow-sm hover:bg-secondary transition-all inline-flex items-center gap-1.5">
+                    Browse files
+                    <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => addFilesToAttachments(Array.from(e.target.files))} accept="image/*,.pdf,application/pdf" multiple />
+                  </label>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">📎 {attachments.length} Attachment(s)</span>
+                    <button onClick={() => setAttachments([])} className="text-xs text-destructive hover:underline bg-transparent border-none cursor-pointer font-bold">Clear All</button>
+                  </div>
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                    {attachments.map((att) => {
+                      const isPdfItem = att.type === "application/pdf" || att.name?.toLowerCase().endsWith(".pdf");
+                      return (
+                        <div key={att.id} className="relative rounded-xl border border-border bg-muted aspect-square overflow-hidden flex items-center justify-center group shadow-sm">
+                          {isPdfItem ? (
+                            <div className="flex flex-col items-center p-2 text-center">
+                              <FileText className="size-6 text-primary" />
+                              <span className="text-[9px] text-foreground font-semibold mt-1.5 line-clamp-2 truncate max-w-full px-1">{getCleanName(att)}</span>
+                            </div>
+                          ) : (
+                            <img src={att.previewUrl} alt="Preview" className="w-full h-full object-cover transition duration-200 group-hover:scale-105" />
+                          )}
+                          <button onClick={() => removeAttachment(att.id)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-white border border-white flex items-center justify-center cursor-pointer shadow-md hover:bg-red-600 transition-colors">
+                            <X className="size-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {attachments.length < 10 && (
+                      <div onClick={() => fileInputRef.current?.click()} className="rounded-xl border-2 border-dashed border-border aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary-light/10 transition-all duration-200">
+                        <ImageIcon className="size-5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground font-medium mt-1">Add more</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 
-            {options && options.length > 0 && (
-              <div 
-                style={{ 
-                  display: "flex", 
-                  gap: 8, 
-                  marginBottom: 20, 
-                  background: "var(--bg-tertiary)", 
-                  padding: 4, 
-                  borderRadius: "var(--radius-md)" 
-                }}
-              >
-                {options.map((opt, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setSelectedOptionIndex(idx);
-                      setGeneratedContent(opt.content);
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: "var(--radius-sm)",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      fontWeight: 600,
-                      background: selectedOptionIndex === idx ? "var(--bg-card)" : "transparent",
-                      color: selectedOptionIndex === idx ? "var(--brand-primary-light)" : "var(--text-muted)",
-                      boxShadow: selectedOptionIndex === idx ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
-                      transition: "all 0.2s ease"
-                    }}
-                  >
-                    ✨ Option {idx + 1}
+            {/* Schedule */}
+            <div className="glass p-6 rounded-2xl space-y-3 bg-white">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                Schedule (optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="input"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button onClick={handlePublishNow} disabled={loading} className="btn-primary shadow-lg shadow-primary/20">
+                <Send className="size-4" /> Publish Now
+              </button>
+              <button onClick={handleSchedule} disabled={loading} className="btn-secondary bg-primary-light border-primary/20 text-primary hover:bg-indigo-100/70 font-bold">
+                <CalendarClock className="size-4" /> Schedule Post
+              </button>
+              <button onClick={handleSaveDraft} disabled={loading} className="btn-secondary">
+                <Save className="size-4" /> Save Draft
+              </button>
+            </div>
+          </div>
+
+          {/* Right: LinkedIn Preview */}
+          <div className="lg:col-span-5 lg:sticky lg:top-8 space-y-4">
+            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Live Preview
+            </div>
+
+            {/* LinkedIn card mockup */}
+            <div className="bg-white rounded-2xl border border-border shadow-md overflow-hidden animate-fade-in">
+              {/* Author row */}
+              <div className="p-4 flex items-start gap-3">
+                {userProfile.avatar ? (
+                  <img src={userProfile.avatar} className="w-12 h-12 rounded-full object-cover border border-border" alt="" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-brand flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm">
+                    {userProfile.name.charAt(0)}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-sm text-foreground tracking-tight">{userProfile.name}</div>
+                  <div className="text-xs text-muted-foreground leading-normal truncate">{userProfile.headline}</div>
+                  <div className="text-[11px] text-muted-foreground/80 mt-1 flex items-center gap-1">
+                    <span>Just now</span>
+                    <span>·</span>
+                    <span>🌐</span>
+                  </div>
+                </div>
+                <button className="text-muted-foreground hover:bg-secondary w-8 h-8 rounded-full flex items-center justify-center transition bg-transparent border-none cursor-pointer text-lg">⋯</button>
+              </div>
+
+              {/* Content */}
+              <div className="px-4 pb-4 text-[14px] text-foreground/90 leading-relaxed whitespace-pre-wrap break-words min-h-[60px] font-sans">
+                {generatedContent || <span className="text-muted-foreground/60 italic font-normal">Your post will appear here as you type...</span>}
+              </div>
+
+              {/* Media preview */}
+              {attachments.length > 0 && (
+                <div className="border-t border-border overflow-hidden bg-secondary/20">
+                  {attachments.length === 1 ? (
+                    attachments[0].type === "application/pdf" || attachments[0].name?.toLowerCase().endsWith(".pdf") ? (
+                      <div className="p-4 flex items-center gap-3 bg-white border-t border-border shadow-sm">
+                        <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-red-600 font-extrabold text-xs">PDF</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-foreground truncate">{getCleanName(attachments[0])}</div>
+                          <div className="text-xs text-muted-foreground">Attached PDF Document</div>
+                        </div>
+                        <FileText className="size-5 text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <img src={attachments[0].previewUrl} alt="" className="w-full max-h-[360px] object-cover" />
+                    )
+                  ) : (
+                    <div className="grid grid-cols-2 gap-0.5 h-[240px] bg-border overflow-hidden">
+                      <div className="h-full overflow-hidden">
+                        <img src={attachments[0].previewUrl} alt="" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="grid grid-rows-2 gap-0.5 h-full">
+                        {attachments.slice(1, 3).map((att, idx) => {
+                          const isMore = idx === 1 && attachments.length > 3;
+                          return (
+                            <div key={att.id} className="relative overflow-hidden h-full">
+                              <img src={att.previewUrl} alt="" className="w-full h-full object-cover" />
+                              {isMore && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white font-extrabold text-lg">
+                                  +{attachments.length - 2}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Reactions mock */}
+              <div className="px-4 py-2.5 border-t border-border flex justify-between text-[11px] text-muted-foreground bg-muted/40 font-semibold">
+                <div className="flex items-center gap-1.5">
+                  <span className="flex items-center">👍 ❤️ 💡</span>
+                  <span>248 others</span>
+                </div>
+                <span>12 Comments · 3 Shares</span>
+              </div>
+
+              {/* Actions footer mock */}
+              <div className="grid grid-cols-4 border-t border-border divide-x divide-border/60 bg-white">
+                {[
+                  { label: "Like", icon: "👍" },
+                  { label: "Comment", icon: "💬" },
+                  { label: "Repost", icon: "🔁" },
+                  { label: "Send", icon: "📤" }
+                ].map((l, i) => (
+                  <button key={i} className="py-3 text-xs font-semibold text-muted-foreground hover:bg-secondary/45 hover:text-foreground transition-colors duration-150 bg-transparent border-none cursor-pointer flex items-center justify-center gap-1.5">
+                    <span>{l.icon}</span>
+                    <span>{l.label}</span>
                   </button>
                 ))}
               </div>
+            </div>
+
+            {generatedContent && (
+              <div className="glass p-4 rounded-xl flex justify-between items-center shadow-sm animate-fade-in bg-white">
+                <span className="text-xs font-semibold text-muted-foreground">Copy compiled post text</span>
+                <button onClick={copyToClipboard} className={`btn-secondary py-1.5 px-4 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all ${
+                  copied ? "bg-success-light border-success/20 text-success" : ""
+                }`}>
+                  {copied ? <><Check className="size-3.5" /> Copied!</> : <><Copy className="size-3.5" /> Copy Text</>}
+                </button>
+              </div>
             )}
-
-            {generatedContent || previewUrl ? (
-              <div>
-                {/* LinkedIn-style preview */}
-                <div
-                  style={{
-                    padding: 24,
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--bg-tertiary)",
-                    border: "1px solid var(--border-default)",
-                  }}
-                >
-                  {/* Profile header */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: "var(--radius-full)",
-                        background: "var(--gradient-brand)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: 16,
-                      }}
+          </div>
+        </div>
+      ) : (
+        /* ===== AI TAB ===== */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
+          {/* Left: Configuration Panel */}
+          <div className="lg:col-span-6 space-y-6">
+            {/* File Dropzone */}
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => { e.preventDefault(); addFilesToAttachments(Array.from(e.dataTransfer.files)); }}
+              className="glass p-8 text-center border-2 border-dashed border-border hover:border-primary/50 transition-all duration-200 cursor-pointer rounded-2xl group bg-white shadow-sm"
+              onClick={() => aiFileInputRef.current?.click()}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center mx-auto mb-4 shadow-md group-hover:scale-105 transition-transform">
+                <Sparkles className="size-6 text-white" />
+              </div>
+              <h3 className="font-bold text-base text-foreground mb-1">Drop a certificate or image</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto mb-4">
+                Attach your milestone photo or certificate PDF — our AI will extract context and craft viral stories.
+              </p>
+              <button className="btn-primary py-2 px-5 text-xs font-bold shadow-sm hover:scale-[1.02] inline-flex items-center gap-2">
+                <UploadCloud className="size-4" /> Upload File
+              </button>
+              <input type="file" ref={aiFileInputRef} className="hidden" onChange={(e) => addFilesToAttachments(Array.from(e.target.files))} accept="image/*,.pdf,application/pdf" />
+              
+              {attachments.length > 0 && (
+                <div className="mt-4 flex flex-col items-center animate-slide-down">
+                  <div className="inline-flex items-center gap-2 p-2 px-4 rounded-xl bg-primary-light border border-primary/20 text-xs text-primary font-bold shadow-sm">
+                    <span>📎 {attachments[0].name.substring(0, 24)}{attachments[0].name.length > 24 ? "…" : ""}</span>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setAttachments([]); }} 
+                      className="bg-transparent border-none text-primary hover:text-indigo-800 cursor-pointer p-0 font-bold ml-1"
                     >
-                      U
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>Your Name</div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Your Headline • Just now</div>
-                    </div>
-                  </div>
-
-                  {/* Post content */}
-                  <div
-                    style={{
-                      fontSize: 14,
-                      lineHeight: 1.7,
-                      color: "var(--text-primary)",
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                      marginBottom: previewUrl ? 16 : 0,
-                    }}
-                  >
-                    {generatedContent || "Start typing or use AI to generate the post text..."}
-                  </div>
-
-                  {/* Media Preview */}
-                  {previewUrl && (
-                    <div style={{ borderRadius: "var(--radius-sm)", overflow: "hidden", border: "1px solid var(--border-default)" }}>
-                      {isPdf ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, background: "var(--bg-secondary)" }}>
-                          <div style={{ fontSize: 32 }}>📄</div>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 14 }}>{getPdfName()}</div>
-                            <div style={{ fontSize: 12, color: "var(--text-muted)" }}>PDF Document</div>
-                          </div>
-                        </div>
-                      ) : (
-                        <img src={previewUrl} alt="Post media" style={{ width: "100%", display: "block" }} />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Engagement bar */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 24,
-                      marginTop: 20,
-                      paddingTop: 16,
-                      borderTop: "1px solid var(--border-default)",
-                      color: "var(--text-muted)",
-                      fontSize: 13,
-                    }}
-                  >
-                    <span>👍 Like</span>
-                    <span>💬 Comment</span>
-                    <span>🔄 Repost</span>
-                    <span>📤 Send</span>
-                  </div>
-                </div>
-
-                {/* Action buttons (only show if using AI tab, since Manual has its own) */}
-                {activeTab === "ai" && (
-                  <div style={{ marginTop: 20 }}>
-                    {/* Attached file indicator */}
-                    {previewUrl && (
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 10,
-                        padding: "10px 14px", marginBottom: 12,
-                        background: "rgba(10,102,194,0.08)",
-                        border: "1px solid rgba(10,102,194,0.2)",
-                        borderRadius: "var(--radius-md)"
-                      }}>
-                        <span style={{ fontSize: 20 }}>
-                          {isPdf ? "📄" : "🖼️"}
-                        </span>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {isPdf ? getPdfName() : (imageFile ? imageFile.name : "Attached Image")}
-                          </div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                            {isPdf ? "PDF will be attached to post" : "Image will be attached to post"}{imageFile ? ` · ${(imageFile.size / 1024).toFixed(0)} KB` : ""}
-                          </div>
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "2px 8px", borderRadius: 99 }}>
-                          ✓ Will attach
-                        </span>
-                      </div>
-                    )}
-                    {showScheduler && (
-                      <div style={{ marginBottom: 16, padding: 16, background: "var(--bg-tertiary)", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)" }}>
-                        <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: "var(--text-primary)" }}>⏰ Schedule Post</h4>
-                        <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ display: "block", fontSize: 10, color: "var(--text-muted)", marginBottom: 4 }}>Date</label>
-                            <input 
-                              type="date" 
-                              value={scheduledDate} 
-                              onChange={(e) => setScheduledDate(e.target.value)} 
-                              style={{ width: "100%", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-card)", color: "var(--text-primary)", fontSize: 12 }}
-                            />
-                          </div>
-                          <div style={{ flex: 1 }}>
-                            <label style={{ display: "block", fontSize: 10, color: "var(--text-muted)", marginBottom: 4 }}>Time</label>
-                            <input 
-                              type="time" 
-                              value={scheduledTime} 
-                              onChange={(e) => setScheduledTime(e.target.value)} 
-                              style={{ width: "100%", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border-default)", background: "var(--bg-card)", color: "var(--text-primary)", fontSize: 12 }}
-                            />
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button onClick={handleSchedule} className="btn-primary" style={{ flex: 1, padding: "6px 10px", fontSize: 11, justifyContent: "center" }}>Confirm Schedule</button>
-                          <button onClick={() => setShowScheduler(false)} className="btn-secondary" style={{ flex: 1, padding: "6px 10px", fontSize: 11, justifyContent: "center" }}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={handleSaveDraft} className="btn-secondary" style={{ flex: 1, justifyContent: "center", fontSize: 12 }}>
-                        💾 Save Draft
-                      </button>
-                      <button onClick={() => setShowScheduler(!showScheduler)} className="btn-secondary" style={{ flex: 1, justifyContent: "center", fontSize: 12, background: showScheduler ? "rgba(10, 102, 194, 0.1)" : "transparent" }}>
-                        ⏰ Schedule
-                      </button>
-                      <button onClick={handlePublishNow} className="btn-primary" style={{ flex: 1, justifyContent: "center", fontSize: 12 }}>
-                        🚀 Publish
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "ai" && (
-                  <div style={{ marginTop: 12 }}>
-                    <button
-                      onClick={handleGenerate}
-                      className="btn-secondary"
-                      style={{ width: "100%", justifyContent: "center", fontSize: 13 }}
-                    >
-                      🔄 Regenerate {imageFile ? "(Re-analyze File)" : ""}
+                      <X className="size-3.5" />
                     </button>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minHeight: 300,
-                  color: "var(--text-muted)",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.5 }}>🤖</div>
-                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
-                  Your post will appear here
+                  <span className="text-[10px] text-muted-foreground mt-1.5 font-medium">
+                    {attachments[0].type === "application/pdf" ? "📄 PDF Parsing mode active" : "🖼️ AI Vision Image mode active"}
+                  </span>
                 </div>
-                <div style={{ fontSize: 13, maxWidth: 250 }}>
-                  Enter a prompt or upload an image and click "Generate" to create your post.
+              )}
+            </div>
+
+            {/* Context Input */}
+            <div className="glass p-6 rounded-2xl space-y-3 bg-white">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                {attachments.length > 0 ? "Additional context (optional)" : "What is this post about?"}
+              </label>
+              <p className="text-xs text-muted-foreground leading-normal">
+                {attachments.length > 0 ? "Give AI specific instructions on what to highlight from the file." : "Describe your milestone, lesson, or idea to feature."}
+              </p>
+              <div className="border border-border rounded-xl p-3 bg-white focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                <textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={4}
+                  placeholder={attachments.length > 0 ? "e.g. Highlight the technical cloud architecture skills from this certificate..." : "e.g. A major lesson I learned after failing my first client pitch..."}
+                  className="w-full border-none outline-none text-sm text-foreground bg-transparent font-sans resize-none placeholder-muted-foreground leading-relaxed"
+                />
+              </div>
+            </div>
+
+            {/* Tone Selection */}
+            <div className="glass p-6 rounded-2xl space-y-4 bg-white">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Tone Style</label>
+              <div className="flex flex-wrap gap-2.5">
+                {TONES.map((t) => {
+                  const active = tone === t.value;
+                  return (
+                    <button 
+                      key={t.value} 
+                      onClick={() => setTone(t.value)} 
+                      className={`py-2 px-4 rounded-full text-xs font-bold cursor-pointer border transition-all duration-200 flex items-center gap-1.5 ${
+                        active 
+                          ? "bg-primary text-white border-primary shadow-md shadow-primary/20 scale-[1.02]" 
+                          : "bg-white text-foreground border-border hover:bg-secondary/50"
+                      }`}
+                    >
+                      <span>{t.emoji}</span>
+                      <span>{t.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Length Selection */}
+            <div className="glass p-6 rounded-2xl space-y-4 bg-white">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Post Length</label>
+              <div className="grid grid-cols-3 gap-3">
+                {LENGTHS.map((l) => {
+                  const active = length === l.value;
+                  return (
+                    <button 
+                      key={l.value} 
+                      onClick={() => setLength(l.value)} 
+                      className={`p-3.5 rounded-2xl text-center cursor-pointer border transition-all flex flex-col items-center justify-center ${
+                        active 
+                          ? "bg-primary-light border-primary text-primary shadow-sm" 
+                          : "bg-white border-border text-foreground hover:bg-secondary/35"
+                      }`}
+                    >
+                      <span className="text-xs font-extrabold">{l.label}</span>
+                      <span className="text-[10px] text-muted-foreground mt-1 font-medium">{l.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Emojis & Hashtags Checkboxes */}
+            <div className="flex items-center gap-6 px-1.5">
+              {[
+                { label: "Include Emojis", state: includeEmojis, setState: setIncludeEmojis },
+                { label: "Include Hashtags", state: includeHashtags, setState: setIncludeHashtags },
+              ].map(({ label, state, setState }) => (
+                <label key={label} className="flex items-center gap-2.5 cursor-pointer text-xs font-bold text-foreground">
+                  <input type="checkbox" checked={state} onChange={(e) => setState(e.target.checked)} className="w-4 h-4 accent-primary cursor-pointer rounded" />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+
+            {/* Generate button */}
+            <button 
+              onClick={handleGenerate} 
+              disabled={loading} 
+              className={`w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl text-sm font-bold border-none text-white cursor-pointer transition-all duration-200 ${
+                loading 
+                  ? "bg-primary/70 cursor-wait" 
+                  : "bg-gradient-brand shadow-lg shadow-primary/20 hover:scale-[1.01]"
+              }`}
+            >
+              {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              <span>{loading ? "Generating LinkedIn Posts…" : "✨ Generate LinkedIn Posts"}</span>
+            </button>
+          </div>
+
+          {/* Right: AI Output Display */}
+          <div className="lg:col-span-6 glass p-6 rounded-2xl min-h-[460px] bg-white flex flex-col justify-between shadow-sm">
+            {loading && (
+              <div className="flex-grow flex flex-col items-center justify-center gap-4 py-16 text-center animate-pulse">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-md shadow-primary/10">
+                  <Sparkles className="size-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-foreground">AI is crafting your posts...</h3>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[240px] mx-auto leading-relaxed">Analyzing context · Calibrating tone · Injecting hooks & formatting</p>
+                </div>
+                <div className="w-44 h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full animate-loadBar" style={{ width: "35%" }} />
+                </div>
+              </div>
+            )}
+
+            {!loading && options.length === 0 && (
+              <div className="flex-grow flex flex-col items-center justify-center text-center py-16 text-muted-foreground">
+                <div className="w-14 h-14 rounded-2xl bg-secondary border border-border flex items-center justify-center mb-4">
+                  <Sparkles className="size-6 text-muted-foreground/75" />
+                </div>
+                <h3 className="font-bold text-sm text-foreground mb-1">Generated variants will appear here</h3>
+                <p className="text-xs max-w-[240px] leading-relaxed text-muted-foreground">Configure the details in the left panel and click the generate button to begin.</p>
+              </div>
+            )}
+
+            {!loading && options.length > 0 && (
+              <div className="space-y-6 animate-fade-in flex-grow">
+                {options[0]?.metadata && (options[0].metadata.title || options[0].metadata.org || options[0].metadata.date) && (
+                  <div className="p-4 rounded-xl bg-success-light border border-success/15 shadow-sm">
+                    <div className="text-[10px] font-bold text-success uppercase tracking-wider mb-2.5">✓ Extracted Credentials</div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { k: "Title", v: options[0].metadata.title },
+                        { k: "Issuer", v: options[0].metadata.org },
+                        { k: "Date", v: options[0].metadata.date }
+                      ].map(({ k, v }) => (
+                        <div key={k} className="min-w-0">
+                          <div className="text-[10px] text-muted-foreground font-semibold">{k}</div>
+                          <div className="text-xs font-bold text-foreground truncate mt-0.5">{v || "—"}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select a variant to edit or post:</div>
+                
+                <div className="space-y-4">
+                  {options.map((opt, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-2xl border border-border p-4 bg-muted/40 hover:bg-white hover:border-primary/40 hover:shadow-md transition-all duration-200 group"
+                    >
+                      <div className="flex justify-between items-center mb-3 pb-3 border-b border-border/60">
+                        <span className="text-xs font-extrabold text-primary flex items-center gap-1.5">
+                          <span>✨</span>
+                          <span>Variant #{idx + 1} ({opt.tone || tone})</span>
+                        </span>
+                        <button 
+                          onClick={() => handleUseOptionText(opt.content)} 
+                          className="btn-primary py-1.5 px-3.5 text-xs font-bold hover:scale-[1.02] shadow-sm flex items-center gap-1 bg-primary text-white border-none cursor-pointer rounded-lg"
+                        >
+                          Use This <ChevronDown className="size-3.5 -rotate-90" />
+                        </button>
+                      </div>
+                      <p className="text-xs text-foreground/80 leading-relaxed font-sans whitespace-pre-wrap break-words">{opt.content}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
         </div>
-      </div>
+      )}
+
+      <style>{`
+        @keyframes loadBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+      `}</style>
     </div>
   );
 }
 
 export default function CreatePostPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)" }}>Loading create page...</div>}>
+    <Suspense fallback={<div style={{ padding: 48, textAlign: "center", color: "#9CA3AF", fontWeight: 500 }}>Loading composer...</div>}>
       <CreatePostPageContent />
     </Suspense>
   );

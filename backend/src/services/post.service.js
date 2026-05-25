@@ -112,72 +112,96 @@ const deletePost = async (postId, userId) => {
 };
 
 /**
- * Upload image for a post
+ * Upload multiple images for a post
  */
-const uploadPostImage = async (postId, userId, file) => {
+const uploadPostImages = async (postId, userId, files, keepImageIds = []) => {
   // Verify post ownership
   await getPostById(postId, userId);
 
-  // Fetch and delete any existing images/PDFs for this post
+  // Fetch all existing images/PDFs for this post
   const { data: existingImages } = await supabaseAdmin
     .from('post_images')
-    .select('storage_path')
+    .select('id, storage_path')
     .eq('post_id', postId);
 
   if (existingImages && existingImages.length > 0) {
-    const paths = existingImages.map(img => img.storage_path).filter(Boolean);
+    // Identify images to delete (those NOT in keepImageIds)
+    const toDelete = existingImages.filter(img => !keepImageIds.includes(String(img.id)));
+    const paths = toDelete.map(img => img.storage_path).filter(Boolean);
+    
     if (paths.length > 0) {
       await supabaseAdmin.storage
         .from('post-images')
         .remove(paths);
     }
-    await supabaseAdmin
+    
+    const idsToDelete = toDelete.map(img => img.id);
+    if (idsToDelete.length > 0) {
+      await supabaseAdmin
+        .from('post_images')
+        .delete()
+        .in('id', idsToDelete);
+    }
+  }
+
+  const uploadedRecords = [];
+  
+  // Upload new files
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const fileName = `${userId}/${postId}/${Date.now()}-${i}-${file.originalname}`;
+    const contentType = file.mimetype === 'application/pdf' ? 'image/png' : file.mimetype;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('post-images')
+      .upload(fileName, file.buffer, {
+        contentType: contentType,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('[Supabase Upload Error]:', uploadError);
+      throw new AppError('Failed to upload media file: ' + file.originalname, 500);
+    }
+
+    // Get public URL
+    const { data: urlData } = supabaseAdmin.storage
+      .from('post-images')
+      .getPublicUrl(fileName);
+
+    // Save image record
+    const { data: imageRecord, error: dbError } = await supabaseAdmin
       .from('post_images')
-      .delete()
-      .eq('post_id', postId);
+      .insert({
+        post_id: postId,
+        image_url: urlData.publicUrl,
+        storage_path: fileName,
+        alt_text: file.originalname,
+        order: i,
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('[Supabase DB Error]:', dbError);
+      throw new AppError('Failed to save media record', 500);
+    }
+    uploadedRecords.push(imageRecord);
   }
 
-  const fileName = `${userId}/${postId}/${Date.now()}-${file.originalname}`;
-
-  // Spoof application/pdf to image/png to bypass Supabase post-images bucket constraints (restricted to image/*)
-  const contentType = file.mimetype === 'application/pdf' ? 'image/png' : file.mimetype;
-
-  // Upload to Supabase Storage
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from('post-images')
-    .upload(fileName, file.buffer, {
-      contentType: contentType,
-      upsert: false,
-    });
-
-  if (uploadError) {
-    console.error('[Supabase Upload Error]:', uploadError);
-    throw new AppError('Failed to upload media file', 500);
-  }
-
-  // Get public URL
-  const { data: urlData } = supabaseAdmin.storage
-    .from('post-images')
-    .getPublicUrl(fileName);
-
-  // Save image record
-  const { data: imageRecord, error: dbError } = await supabaseAdmin
+  // Fetch and return the complete up-to-date post_images list ordered
+  const { data: finalImages, error: finalError } = await supabaseAdmin
     .from('post_images')
-    .insert({
-      post_id: postId,
-      image_url: urlData.publicUrl,
-      storage_path: fileName,
-      alt_text: file.originalname,
-      order: 0,
-    })
-    .select()
-    .single();
+    .select('*')
+    .eq('post_id', postId)
+    .order('order', { ascending: true });
 
-  if (dbError) {
-    console.error('[Supabase DB Error]:', dbError);
-    throw new AppError('Failed to save media record', 500);
+  if (finalError) {
+    console.error('[Supabase Fetch Error]:', finalError);
   }
-  return imageRecord;
+
+  return finalImages || [];
 };
 
 /**
@@ -204,6 +228,7 @@ const publishToLinkedIn = async (postId, userId) => {
   let isPdf = false;
   let title = '';
   let finalContent = post.content;
+  let imagesToAttach = [];
 
   if (post.post_images && post.post_images.length > 0) {
     const media = post.post_images[0];
@@ -267,76 +292,82 @@ const publishToLinkedIn = async (postId, userId) => {
         }
         console.log('Successfully uploaded PDF document natively:', assetUrn);
       } else {
-        // Handle image using legacy assets API registration
-        console.log('Registering image upload via LinkedIn Assets API...');
-        const registerRequestBody = {
-          registerUploadRequest: {
-            recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-            owner: `urn:li:person:${user.linkedin_id}`,
-            serviceRelationships: [
-              {
-                relationshipType: 'OWNER',
-                identifier: 'urn:li:userGeneratedContent'
-              }
-            ]
-          }
-        };
+        // Multiple Images!
+        for (const img of post.post_images) {
+          console.log(`Registering image upload for ${img.alt_text || 'Image'} via LinkedIn Assets API...`);
+          const registerRequestBody = {
+            registerUploadRequest: {
+              recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+              owner: `urn:li:person:${user.linkedin_id}`,
+              serviceRelationships: [
+                {
+                  relationshipType: 'OWNER',
+                  identifier: 'urn:li:userGeneratedContent'
+                }
+              ]
+            }
+          };
 
-        const registerResponse = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${user.linkedin_access_token}`,
-            'Content-Type': 'application/json',
-            'X-Restli-Protocol-Version': '2.0.0',
-          },
-          body: JSON.stringify(registerRequestBody)
-        });
-
-        if (!registerResponse.ok) {
-          throw new Error(`LinkedIn image register error: ${await registerResponse.text()}`);
-        }
-
-        const registerData = await registerResponse.json();
-        const uploadMechanism = registerData.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'];
-        const uploadUrl = uploadMechanism.uploadUrl;
-        const uploadHeaders = uploadMechanism.headers || {};
-        assetUrn = registerData.value.asset;
-
-        // 2. Fetch file from Supabase and upload to LinkedIn
-        console.log('Uploading image binary to LinkedIn...');
-        const fileRes = await fetch(media.image_url);
-        if (!fileRes.ok) {
-          throw new Error(`Failed to fetch media from Supabase URL: ${media.image_url}`);
-        }
-        const fileBuffer = await fileRes.arrayBuffer();
-
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${user.linkedin_access_token}`,
-            ...uploadHeaders
-          },
-          body: fileBuffer
-        });
-
-        if (!uploadRes.ok) {
-          const uploadResText = await uploadRes.text();
-          console.warn('LinkedIn image PUT failed, attempting POST...', uploadResText);
-          
-          const uploadResPost = await fetch(uploadUrl, {
+          const registerResponse = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
             method: 'POST',
+            headers: {
+              Authorization: `Bearer ${user.linkedin_access_token}`,
+              'Content-Type': 'application/json',
+              'X-Restli-Protocol-Version': '2.0.0',
+            },
+            body: JSON.stringify(registerRequestBody)
+          });
+
+          if (!registerResponse.ok) {
+            console.error(`LinkedIn image register error: ${await registerResponse.text()}`);
+            continue;
+          }
+
+          const registerData = await registerResponse.json();
+          const uploadMechanism = registerData.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'];
+          const uploadUrl = uploadMechanism.uploadUrl;
+          const uploadHeaders = uploadMechanism.headers || {};
+          const currentAssetUrn = registerData.value.asset;
+
+          // Fetch file from Supabase and upload to LinkedIn
+          console.log('Uploading image binary to LinkedIn...', img.image_url);
+          const fileRes = await fetch(img.image_url);
+          if (!fileRes.ok) {
+            console.error(`Failed to fetch media from Supabase URL: ${img.image_url}`);
+            continue;
+          }
+          const fileBuffer = await fileRes.arrayBuffer();
+
+          const uploadRes = await fetch(uploadUrl, {
+            method: 'PUT',
             headers: {
               'Authorization': `Bearer ${user.linkedin_access_token}`,
               ...uploadHeaders
             },
             body: fileBuffer
           });
-          
-          if (!uploadResPost.ok) {
-            throw new Error(`LinkedIn image POST failed: ${await uploadResPost.text()}`);
+
+          if (!uploadRes.ok) {
+            const uploadResText = await uploadRes.text();
+            console.warn('LinkedIn image PUT failed, attempting POST...', uploadResText);
+            
+            const uploadResPost = await fetch(uploadUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${user.linkedin_access_token}`,
+                ...uploadHeaders
+              },
+              body: fileBuffer
+            });
+            
+            if (!uploadResPost.ok) {
+              console.error(`LinkedIn image POST failed: ${await uploadResPost.text()}`);
+              continue;
+            }
           }
+          console.log('Successfully uploaded image natively:', currentAssetUrn);
+          imagesToAttach.push({ id: currentAssetUrn, altText: img.alt_text || 'Image' });
         }
-        console.log('Successfully uploaded image natively:', assetUrn);
       }
     } catch (err) {
       console.error('Error during native LinkedIn media upload:', err);
@@ -344,8 +375,6 @@ const publishToLinkedIn = async (postId, userId) => {
       if (isPdf) {
         console.log('Falling back to PDF link append due to upload error');
         finalContent += `\n\n📄 View Document: ${media.image_url}`;
-        assetUrn = null;
-      } else {
         assetUrn = null;
       }
     }
@@ -362,15 +391,25 @@ const publishToLinkedIn = async (postId, userId) => {
     lifecycleState: 'PUBLISHED'
   };
 
-  if (assetUrn) {
+  if (isPdf && assetUrn) {
     postBody.content = {
       media: {
         id: assetUrn
       }
     };
-    if (isPdf) {
-      postBody.content.media.title = title || 'Document';
-    }
+    postBody.content.media.title = title || 'Document';
+  } else if (imagesToAttach.length === 1) {
+    postBody.content = {
+      media: {
+        id: imagesToAttach[0].id
+      }
+    };
+  } else if (imagesToAttach.length > 1) {
+    postBody.content = {
+      multiImage: {
+        images: imagesToAttach
+      }
+    };
   }
 
   try {
@@ -409,8 +448,10 @@ const publishToLinkedIn = async (postId, userId) => {
   // Fallback to legacy ugcPosts API if rest/posts failed (or for safety)
   console.log('Attempting legacy ugcPosts fallback...');
   let mediaCategory = 'NONE';
-  if (assetUrn) {
-    mediaCategory = isPdf ? 'NATIVE_DOCUMENT' : 'IMAGE';
+  if (isPdf && assetUrn) {
+    mediaCategory = 'NATIVE_DOCUMENT';
+  } else if (imagesToAttach.length > 0) {
+    mediaCategory = 'IMAGE';
   }
 
   const specificContent = {
@@ -422,7 +463,7 @@ const publishToLinkedIn = async (postId, userId) => {
     },
   };
 
-  if (assetUrn) {
+  if (isPdf && assetUrn) {
     specificContent['com.linkedin.ugc.ShareContent'].media = [
       {
         status: 'READY',
@@ -431,6 +472,13 @@ const publishToLinkedIn = async (postId, userId) => {
         title: { text: title }
       }
     ];
+  } else if (imagesToAttach.length > 0) {
+    specificContent['com.linkedin.ugc.ShareContent'].media = imagesToAttach.map(img => ({
+      status: 'READY',
+      description: { text: img.altText },
+      media: img.id,
+      title: { text: img.altText }
+    }));
   }
 
   const legacyPostBody = {
@@ -477,6 +525,6 @@ module.exports = {
   getPostById,
   updatePost,
   deletePost,
-  uploadPostImage,
+  uploadPostImages,
   publishToLinkedIn,
 };

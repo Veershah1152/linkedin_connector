@@ -116,15 +116,33 @@ router.delete('/:id', async (req, res, next) => {
 
 /**
  * POST /api/posts/:id/images
- * Upload an image for a post
+ * Upload multiple images for a post
  */
-router.post('/:id/images', upload.single('image'), async (req, res, next) => {
+router.post('/:id/images', upload.array('images', 10), async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: 'No image file provided' });
+    let keepImageIds = [];
+    if (req.body.keepImageIds) {
+      try {
+        keepImageIds = typeof req.body.keepImageIds === 'string'
+          ? JSON.parse(req.body.keepImageIds)
+          : req.body.keepImageIds;
+      } catch (err) {
+        keepImageIds = Array.isArray(req.body.keepImageIds)
+          ? req.body.keepImageIds
+          : [req.body.keepImageIds];
+      }
     }
-    const image = await postService.uploadPostImage(req.params.id, req.user.userId, req.file);
-    res.status(201).json({ success: true, data: image });
+    
+    // Ensure all elements in keepImageIds are strings
+    keepImageIds = (Array.isArray(keepImageIds) ? keepImageIds : [keepImageIds]).map(id => String(id));
+
+    const images = await postService.uploadPostImages(
+      req.params.id,
+      req.user.userId,
+      req.files || [],
+      keepImageIds
+    );
+    res.status(201).json({ success: true, data: images });
   } catch (error) {
     next(error);
   }

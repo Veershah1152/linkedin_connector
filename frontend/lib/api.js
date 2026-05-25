@@ -64,4 +64,52 @@ export const api = {
   getDashboard: () => request('/api/analytics/dashboard'),
   getPostAnalytics: (id) => request(`/api/analytics/posts/${id}`),
   getTrends: (days = 30) => request(`/api/analytics/trends?days=${days}`),
+
+  // Career Automation
+  importLinkedInProfile: () => request('/api/career/import'),
+  parseLinkedInProfile: (linkedinFile, cvFile, linkedinText, cvText) => {
+    const formData = new FormData();
+    if (linkedinFile) formData.append('linkedinFile', linkedinFile);
+    if (cvFile) formData.append('cvFile', cvFile);
+    if (linkedinText) formData.append('linkedinText', linkedinText);
+    if (cvText) formData.append('cvText', cvText);
+    return request('/api/career/resumes/parse-profile', { method: 'POST', body: formData });
+  },
+  getResumes: () => request('/api/career/resumes'),
+  createResume: (data) => request('/api/career/resumes', { method: 'POST', body: JSON.stringify(data) }),
+  getResume: (id) => request(`/api/career/resumes/${id}`),
+  updateResume: (id, data) => request(`/api/career/resumes/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  deleteResume: (id) => request(`/api/career/resumes/${id}`, { method: 'DELETE' }),
+  getResumeVersions: (id) => request(`/api/career/resumes/${id}/versions`),
+  rollbackResumeVersion: (id, version) => request(`/api/career/resumes/${id}/rollback`, { method: 'POST', body: JSON.stringify({ version }) }),
+  optimizeResume: (id, targetRole) => request(`/api/career/resumes/${id}/optimize`, { method: 'POST', body: JSON.stringify({ targetRole }) }),
+  analyzeATS: (id, targetRole) => request(`/api/career/resumes/${id}/ats`, { method: 'POST', body: JSON.stringify({ targetRole }) }),
+  getAtsHistory: (id) => request(`/api/career/resumes/${id}/ats/history`),
+  getCertifications: () => request('/api/career/certifications'),
+  uploadCertification: (file, details) => {
+    const formData = new FormData();
+    if (file) formData.append('file', file);
+    formData.append('title', details.title);
+    formData.append('issuingOrganization', details.issuingOrganization);
+    if (details.issueDate) formData.append('issueDate', details.issueDate);
+    if (details.credentialId) formData.append('credentialId', details.credentialId);
+    if (details.credentialUrl) formData.append('credentialUrl', details.credentialUrl);
+    return request('/api/career/certifications', { method: 'POST', body: formData });
+  },
+  publishCertification: (id) => request(`/api/career/certifications/${id}/publish`, { method: 'POST' }),
+
+  // AI Chat for resume edits
+  chatWithResume: (id, message, chatHistory = []) =>
+    request(`/api/career/resumes/${id}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, chatHistory }),
+    }),
+
+  // ATS score targeting
+  atsTargetOptimize: (id, targetRole, targetScore) =>
+    request(`/api/career/resumes/${id}/ats-optimize`, {
+      method: 'POST',
+      body: JSON.stringify({ targetRole, targetScore }),
+    }),
 };
+

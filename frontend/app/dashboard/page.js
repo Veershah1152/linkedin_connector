@@ -2,12 +2,30 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  FileText,
+  Send,
+  CalendarClock,
+  Linkedin,
+  Sparkles,
+  PenSquare,
+  Wand2,
+  CalendarRange,
+  ArrowUpRight,
+  Trash2,
+  Edit3,
+  Rocket,
+  CalendarOff,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const fetchUser = async () => {
     try {
@@ -15,9 +33,7 @@ export default function DashboardPage() {
         credentials: "include",
       });
       const data = await res.json();
-      if (data.success) {
-        setUser(data.data);
-      }
+      if (data.success) setUser(data.data);
     } catch (err) {
       console.error("Error fetching user:", err);
     }
@@ -29,9 +45,7 @@ export default function DashboardPage() {
         credentials: "include",
       });
       const data = await res.json();
-      if (data.success) {
-        setPosts(data.posts || []);
-      }
+      if (data.success) setPosts(data.posts || []);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
@@ -45,397 +59,454 @@ export default function DashboardPage() {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
+    if (!confirm("Delete this post?")) return;
+    setActionLoadingId(id);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${id}`, {
         method: "DELETE",
         credentials: "include",
       });
       const data = await res.json();
-      if (data.success) {
-        fetchPosts();
-      } else {
-        alert("Failed to delete post: " + (data.error || "Unknown error"));
-      }
+      if (data.success) fetchPosts();
+      else alert("Failed to delete: " + (data.error || "Unknown error"));
     } catch (err) {
-      console.error("Delete error:", err);
       alert("Error deleting post.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const handlePublishNow = async (id) => {
     if (!confirm("Publish this post to LinkedIn immediately?")) return;
+    setActionLoadingId(id);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${id}/publish`, {
         method: "POST",
         credentials: "include",
       });
       const data = await res.json();
-      if (data.success) {
-        alert("Published successfully!");
-        fetchPosts();
-      } else {
-        alert("Failed to publish: " + (data.error || "Unknown error"));
-      }
+      if (data.success) { alert("Published!"); fetchPosts(); }
+      else alert("Failed to publish: " + (data.error || "Unknown error"));
     } catch (err) {
-      console.error("Publish error:", err);
       alert("Error publishing post.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const handleUnschedule = async (id) => {
-    if (!confirm("Are you sure you want to cancel the schedule? This will return the post to Drafts.")) return;
+    if (!confirm("Cancel schedule and move to drafts?")) return;
+    setActionLoadingId(id);
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          status: "draft",
-          scheduledAt: null
-        }),
+        body: JSON.stringify({ status: "draft", scheduledAt: null }),
       });
       const data = await res.json();
-      if (data.success) {
-        fetchPosts();
-      } else {
-        alert("Failed to cancel schedule: " + (data.error || "Unknown error"));
-      }
+      if (data.success) fetchPosts();
     } catch (err) {
-      console.error("Unschedule error:", err);
-      alert("Error cancelling schedule.");
+      alert("Error unscheduling.");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
-  // Calculate stats
+  const fmtRelative = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  };
+
   const totalPosts = posts.length;
   const publishedCount = posts.filter((p) => p.status === "published").length;
   const scheduledCount = posts.filter((p) => p.status === "scheduled").length;
-  const publishedPercent = totalPosts ? Math.round((publishedCount / totalPosts) * 100) : 0;
+  const draftCount = posts.filter((p) => p.status === "draft").length;
+  const recent = [...posts].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5);
+  const displayName = user ? user.full_name.split(" ")[0] : "User";
 
   const stats = [
-    { label: "Total Posts", value: totalPosts.toString(), change: "All time creations", icon: "📄", color: "#3B82F6", gradient: "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.01) 100%)" },
-    { label: "Published Feed", value: publishedCount.toString(), change: `${publishedPercent}% of total posts`, icon: "✅", color: "#22C55E", gradient: "linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.01) 100%)" },
-    { label: "Scheduled Queue", value: scheduledCount.toString(), change: `${scheduledCount} upcoming post(s)`, icon: "📅", color: "#F59E0B", gradient: "linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.01) 100%)" },
-    { label: "Connected Account", value: user ? user.full_name : "Checking...", change: user ? "LinkedIn Connected" : "Connection details", icon: "🔗", color: "#0A66C2", gradient: "linear-gradient(135deg, rgba(10, 102, 194, 0.12) 0%, rgba(10, 102, 194, 0.01) 100%)" },
+    { label: "Total Posts", value: totalPosts, icon: FileText, color: "#6366F1", bg: "#EEF2FF" },
+    { label: "Published", value: publishedCount, icon: Send, color: "#10B981", bg: "#ECFDF5" },
+    { label: "Scheduled", value: scheduledCount, icon: CalendarClock, color: "#F59E0B", bg: "#FFFBEB" },
+    { label: "Drafts", value: draftCount, icon: Clock, color: "#8B5CF6", bg: "#F5F3FF" },
   ];
 
-  const statusConfig = {
-    published: { badgeClass: "badge-published", label: "Published" },
-    scheduled: { badgeClass: "badge-scheduled", label: "Scheduled" },
-    draft: { badgeClass: "badge-draft", label: "Draft" },
-    failed: { badgeClass: "badge-failed", label: "Failed" },
-  };
-
-  const getMediaInfo = (post) => {
-    if (!post.post_images || post.post_images.length === 0) return null;
-    const media = post.post_images[0];
-    const isPdf = 
-      (media.alt_text && media.alt_text.toLowerCase().endsWith('.pdf')) ||
-      (media.image_url && media.image_url.toLowerCase().split('?')[0].endsWith('.pdf')) ||
-      (media.storage_path && media.storage_path.toLowerCase().endsWith('.pdf'));
-    
-    return {
-      isPdf,
-      name: media.alt_text || (isPdf ? "document.pdf" : "image.png"),
-      url: media.image_url
-    };
-  };
+  const quickActions = [
+    {
+      href: "/dashboard/create",
+      icon: PenSquare,
+      title: "Write a Post",
+      desc: "Compose from scratch with a live LinkedIn preview.",
+      color: "#6366F1",
+      bg: "#EEF2FF",
+    },
+    {
+      href: "/dashboard/create?tab=ai",
+      icon: Wand2,
+      title: "AI Generator",
+      desc: "Upload a certificate or enter a topic — AI writes hook variations.",
+      color: "#8B5CF6",
+      bg: "#F5F3FF",
+    },
+    {
+      href: "/dashboard/schedule",
+      icon: CalendarRange,
+      title: "View Schedule",
+      desc: "See and rearrange your queued posts for the next two weeks.",
+      color: "#F59E0B",
+      bg: "#FFFBEB",
+    },
+  ];
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: 1200, margin: "0 auto" }}>
-      {/* Dynamic Welcome Hero Banner */}
-      <div 
-        style={{ 
-          background: "linear-gradient(135deg, rgba(26, 26, 36, 0.7) 0%, rgba(16, 16, 23, 0.9) 100%)",
-          border: "1px solid var(--border-default)",
-          borderRadius: "var(--radius-lg)",
-          padding: "36px 40px",
-          marginBottom: 36,
-          boxShadow: "var(--shadow-md)",
-          position: "relative",
-          overflow: "hidden"
-        }}
-      >
-        {/* Glow Effects */}
-        <div style={{ position: "absolute", width: 300, height: 300, top: -150, right: -100, borderRadius: "50%", background: "radial-gradient(circle, rgba(10,102,194,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", width: 250, height: 250, bottom: -125, left: -50, borderRadius: "50%", background: "radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 8, color: "var(--text-primary)" }}>
-            Welcome back, {user ? user.full_name : "User"}! ✨
-          </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.6, maxWidth: 650 }}>
-            Ready to enhance your LinkedIn presence? Use our smart AI Assistant to analyze completion certificates or draft engaging posts, then preview and schedule them instantly.
-          </p>
-          {user?.headline && (
-            <div style={{ display: "inline-flex", marginTop: 12, padding: "4px 12px", background: "rgba(10, 102, 194, 0.08)", border: "1px solid rgba(10, 102, 194, 0.15)", borderRadius: "var(--radius-sm)", fontSize: 12, color: "var(--brand-primary-light)", fontWeight: 500 }}>
-              💼 {user.headline}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div
+    <div className="space-y-8 animate-fade-in">
+      {/* ===== HERO BANNER ===== */}
+      <section
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 20,
-          marginBottom: 36,
+          borderRadius: 20,
+          background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #A78BFA 100%)",
+          color: "white",
+          overflow: "hidden",
+          position: "relative",
         }}
       >
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="card"
-            style={{ 
-              padding: 24, 
-              background: stat.gradient || "var(--bg-card)",
-              border: "1px solid var(--border-default)",
-              position: "relative"
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 12,
-              }}
-            >
-              <span style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 600 }}>
-                {stat.label}
-              </span>
-              <span
-                style={{
-                  fontSize: 20,
-                  width: 40,
-                  height: 40,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "var(--radius-md)",
-                  background: `${stat.color}15`,
-                  border: `1px solid ${stat.color}30`,
-                  boxShadow: `0 0 10px ${stat.color}10`
-                }}
-              >
-                {stat.icon}
-              </span>
-            </div>
-            <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 4, color: "var(--text-primary)" }}>{stat.value}</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>{stat.change}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Quick Actions Grid Card */}
-      <div style={{ marginBottom: 36 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: "var(--text-secondary)", letterSpacing: "0.5px", textTransform: "uppercase" }}>Quick Actions</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
-          
-          <Link 
-            href="/dashboard/create" 
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <div className="card" style={{ padding: 24, cursor: "pointer", display: "flex", gap: 16, alignItems: "flex-start", height: "100%" }}>
-              <div style={{ fontSize: 24, background: "rgba(10, 102, 194, 0.08)", padding: 12, borderRadius: "var(--radius-md)", border: "1px solid rgba(10, 102, 194, 0.15)" }}>
-                ✍️
-              </div>
-              <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: "var(--text-primary)" }}>Manual Creator</h3>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>Write and edit posts manually, attach certificate PDFs/images, and preview LinkedIn layout.</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link 
-            href="/dashboard/create?tab=ai" 
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <div className="card" style={{ padding: 24, cursor: "pointer", display: "flex", gap: 16, alignItems: "flex-start", height: "100%" }}>
-              <div style={{ fontSize: 24, background: "rgba(124, 58, 237, 0.08)", padding: 12, borderRadius: "var(--radius-md)", border: "1px solid rgba(124, 58, 237, 0.15)" }}>
-                🤖
-              </div>
-              <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: "var(--text-primary)" }}>AI Post Generator</h3>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>Upload your PDF completion certificate, analyze the text, and generate optimized LinkedIn copy.</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link 
-            href="/dashboard/schedule" 
-            style={{ textDecoration: "none", color: "inherit" }}
-          >
-            <div className="card" style={{ padding: 24, cursor: "pointer", display: "flex", gap: 16, alignItems: "flex-start", height: "100%" }}>
-              <div style={{ fontSize: 24, background: "rgba(245, 158, 11, 0.08)", padding: 12, borderRadius: "var(--radius-md)", border: "1px solid rgba(245, 158, 11, 0.15)" }}>
-                📅
-              </div>
-              <div>
-                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, color: "var(--text-primary)" }}>View Schedule</h3>
-                <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>Check your scheduled queue, adjust timing options, and coordinate future LinkedIn posts.</p>
-              </div>
-            </div>
-          </Link>
-
-        </div>
-      </div>
-
-      {/* Recent Posts */}
-      <div style={{ marginBottom: 24 }}>
+        {/* Decorative blobs */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 16,
+            position: "absolute", top: -60, right: -40, width: 260, height: 260, borderRadius: "50%",
+            background: "rgba(255,255,255,0.08)", pointerEvents: "none",
           }}
-        >
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "0.5px", textTransform: "uppercase" }}>Recent Posts</h2>
-          <Link
-            href="/dashboard/posts"
-            style={{
-              color: "var(--brand-primary-light)",
-              textDecoration: "none",
-              fontSize: 14,
-              fontWeight: 600,
-              display: "flex",
-              alignItems: "center",
-              gap: 4
-            }}
-          >
-            View All Posts <span>→</span>
+        />
+        <div
+          style={{
+            position: "absolute", bottom: -80, left: -30, width: 200, height: 200, borderRadius: "50%",
+            background: "rgba(255,255,255,0.05)", pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ padding: "36px 40px", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "center" }}>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <div
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase",
+                  opacity: 0.75, marginBottom: 12, fontWeight: 600,
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#A7F3D0", animation: "pulse 2s infinite" }} />
+                Welcome back
+              </div>
+              <h1 style={{ fontSize: "clamp(24px, 4vw, 36px)", fontWeight: 800, lineHeight: 1.2, marginBottom: 10 }}>
+                Hey {displayName}! 👋
+              </h1>
+              <p style={{ fontSize: 15, opacity: 0.85, lineHeight: 1.6, maxWidth: 480 }}>
+                {user?.headline || "LinkedIn Content Creator"} · Ready to build your personal brand today?
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flexShrink: 0 }}>
+              <Link
+                href="/dashboard/create"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  background: "white", color: "#6366F1", padding: "11px 22px",
+                  borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.15)", transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.2)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.15)"; }}
+              >
+                <PenSquare size={16} /> New Post
+              </Link>
+              <Link
+                href="/dashboard/career"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  background: "rgba(255,255,255,0.15)", color: "white",
+                  padding: "11px 22px", borderRadius: 10, fontWeight: 600, fontSize: 14,
+                  textDecoration: "none", border: "1px solid rgba(255,255,255,0.25)",
+                  backdropFilter: "blur(8px)", transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.25)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; }}
+              >
+                <Sparkles size={16} /> Open Resume
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== STATS GRID ===== */}
+      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.label}
+              style={{
+                background: "white", borderRadius: 16, padding: "20px 24px",
+                border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)",
+                display: "flex", flexDirection: "column", gap: 12, transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "var(--shadow-sm)"; e.currentTarget.style.transform = "none"; }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  {stat.label}
+                </span>
+                <div
+                  style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <Icon size={17} color={stat.color} />
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: "var(--foreground)", lineHeight: 1 }}>
+                  {loading ? "—" : stat.value}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 4 }}>
+                  All time
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* ===== QUICK ACTIONS ===== */}
+      <section>
+        <div style={{ marginBottom: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>Quick Actions</h2>
+          <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginTop: 4 }}>Where do you want to start today?</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link
+                key={action.href}
+                href={action.href}
+                style={{
+                  background: "white", borderRadius: 16, padding: "24px",
+                  border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)",
+                  textDecoration: "none", display: "flex", flexDirection: "column", gap: 16,
+                  transition: "all 0.2s ease", position: "relative", overflow: "hidden",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = "var(--shadow-lg)";
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.borderColor = action.color + "40";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = "var(--shadow-sm)";
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.borderColor = "var(--border)";
+                }}
+              >
+                <div
+                  style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: action.bg, display: "flex", alignItems: "center", justifyContent: "center",
+                  }}
+                >
+                  <Icon size={20} color={action.color} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "var(--foreground)", marginBottom: 6 }}>
+                    {action.title}
+                  </div>
+                  <div style={{ fontSize: 13, color: "var(--muted-foreground)", lineHeight: 1.5 }}>
+                    {action.desc}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600, color: action.color, marginTop: "auto" }}>
+                  Open <ArrowUpRight size={14} />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ===== RECENT POSTS ===== */}
+      <section>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
+          <div>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>Recent Posts</h2>
+            <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginTop: 4 }}>Your last 5 posts across drafts, scheduled, and published</p>
+          </div>
+          <Link href="/dashboard/posts" style={{ fontSize: 13, fontWeight: 600, color: "var(--primary)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+            See all <ArrowUpRight size={14} />
           </Link>
         </div>
 
-        {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="card skeleton" style={{ height: 80, opacity: 0.5 }} />
-            ))}
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="card" style={{ padding: 48, textAlign: "center", color: "var(--text-secondary)" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
-            <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, color: "var(--text-primary)" }}>No Posts Created Yet</h3>
-            <p style={{ fontSize: 13, marginBottom: 24, color: "var(--text-muted)", maxWidth: 450, margin: "0 auto 24px" }}>
-              Start building your personal brand. Create your first LinkedIn post from scratch or generate it using our smart AI.
-            </p>
-            <Link href="/dashboard/create" className="btn-primary" style={{ display: "inline-flex" }}>
-              ✍️ Write First Post
-            </Link>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {posts.slice(0, 5).map((post) => {
-              const media = getMediaInfo(post);
-              return (
-                <div
-                  key={post.id}
-                  className="card"
-                  style={{
-                    padding: "20px 24px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 20,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        color: "var(--text-primary)",
-                        marginBottom: 4
-                      }}
-                    >
-                      {post.content}
-                    </div>
-                    
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })} • {post.ai_generated ? "🤖 AI Generated" : "✍️ Manual"}
-                      </span>
-                      {media && (
-                        <span 
-                          style={{ 
-                            fontSize: 11, 
-                            display: "inline-flex", 
-                            alignItems: "center", 
-                            gap: 4, 
-                            color: media.isPdf ? "var(--brand-accent-light)" : "var(--brand-primary-light)",
-                            background: media.isPdf ? "rgba(124, 58, 237, 0.08)" : "rgba(10, 102, 194, 0.08)",
-                            padding: "2px 8px", 
-                            borderRadius: "var(--radius-sm)",
-                            border: media.isPdf ? "1px solid rgba(124, 58, 237, 0.15)" : "1px solid rgba(10, 102, 194, 0.15)",
-                            fontWeight: 600
+        <div
+          style={{
+            background: "white", borderRadius: 16, border: "1px solid var(--border)",
+            boxShadow: "var(--shadow-sm)", overflow: "hidden",
+          }}
+        >
+          {loading ? (
+            <div style={{ padding: 24 }}>
+              {[1, 2, 3].map((n) => (
+                <div key={n} style={{ height: 60, borderRadius: 8, marginBottom: 12 }} className="skeleton" />
+              ))}
+            </div>
+          ) : recent.length === 0 ? (
+            <div style={{ padding: "60px 24px", textAlign: "center" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📝</div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "var(--foreground)", marginBottom: 6 }}>No posts yet</div>
+              <p style={{ fontSize: 14, color: "var(--muted-foreground)", marginBottom: 20 }}>Start building your personal brand on LinkedIn.</p>
+              <Link href="/dashboard/create" className="btn-primary" style={{ textDecoration: "none", display: "inline-flex" }}>
+                ✍️ Write First Post
+              </Link>
+            </div>
+          ) : (
+            <div>
+              {recent.map((post, idx) => {
+                const isBusy = actionLoadingId === post.id;
+                const statusConfig = {
+                  published: { label: "Published", bg: "#ECFDF5", color: "#065F46", dot: "#10B981" },
+                  scheduled: { label: "Scheduled", bg: "#FFFBEB", color: "#92400E", dot: "#F59E0B" },
+                  draft: { label: "Draft", bg: "#F9FAFB", color: "#374151", dot: "#9CA3AF" },
+                  failed: { label: "Failed", bg: "#FEF2F2", color: "#991B1B", dot: "#EF4444" },
+                };
+                const sc = statusConfig[post.status] || statusConfig.draft;
+
+                return (
+                  <div
+                    key={post.id}
+                    style={{
+                      padding: "16px 20px",
+                      borderBottom: idx < recent.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                      display: "flex", alignItems: "flex-start", gap: 16,
+                      opacity: isBusy ? 0.5 : 1, pointerEvents: isBusy ? "none" : "auto",
+                      transition: "background 0.15s ease",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#FAFAFA"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "white"; }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, color: "var(--foreground)", lineHeight: 1.55, fontWeight: 500, marginBottom: 8, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {post.content}
+                      </p>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>
+                          {fmtRelative(post.created_at)}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 9999,
+                            background: sc.bg, color: sc.color,
+                            display: "inline-flex", alignItems: "center", gap: 4,
                           }}
                         >
-                          {media.isPdf ? "📄" : "🖼️"} {media.name}
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: sc.dot }} />
+                          {sc.label}
                         </span>
-                      )}
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", background: "var(--secondary)", padding: "2px 8px", borderRadius: 6 }}>
+                          {post.ai_generated ? "🤖 AI" : "✍️ Manual"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
-                    <span className={`badge ${statusConfig[post.status || "draft"]?.badgeClass || "badge-draft"}`}>
-                      {statusConfig[post.status || "draft"]?.label || "Draft"}
-                    </span>
-                    
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center", flexWrap: "wrap" }}>
                       {post.status === "draft" && (
-                        <button onClick={() => handlePublishNow(post.id)} className="btn-primary" style={{ padding: "6px 14px", fontSize: 12, borderRadius: "var(--radius-sm)" }}>
-                          🚀 Publish
+                        <button
+                          onClick={() => handlePublishNow(post.id)}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                            background: "var(--primary)", color: "white", border: "none",
+                            cursor: "pointer", transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--primary-hover)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--primary)"; }}
+                        >
+                          <Rocket size={12} /> Publish
                         </button>
                       )}
                       {post.status === "scheduled" && (
-                        <>
-                          <button onClick={() => handlePublishNow(post.id)} className="btn-primary" style={{ padding: "6px 14px", fontSize: 12, borderRadius: "var(--radius-sm)" }}>
-                            🚀 Now
-                          </button>
-                          <button onClick={() => handleUnschedule(post.id)} className="btn-secondary" style={{ padding: "6px 14px", fontSize: 12, borderRadius: "var(--radius-sm)" }}>
-                            Unschedule
-                          </button>
-                        </>
+                        <button
+                          onClick={() => handleUnschedule(post.id)}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                            background: "var(--warning-light)", color: "var(--warning-foreground)",
+                            border: "1px solid rgba(245,158,11,0.2)", cursor: "pointer", transition: "all 0.15s ease",
+                          }}
+                        >
+                          <CalendarOff size={12} /> Unschedule
+                        </button>
                       )}
                       {post.status !== "published" && (
-                        <Link 
-                          href={`/dashboard/create?edit=${post.id}`} 
-                          className="btn-secondary" 
-                          style={{ padding: "6px 14px", fontSize: 12, borderRadius: "var(--radius-sm)", textDecoration: "none" }}
+                        <Link
+                          href={`/dashboard/create?edit=${post.id}`}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                            background: "var(--secondary)", color: "var(--foreground)",
+                            border: "1px solid var(--border)", textDecoration: "none", transition: "all 0.15s ease",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#E5E7EB"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--secondary)"; }}
                         >
-                          ✏️ Edit
+                          <Edit3 size={12} /> Edit
                         </Link>
                       )}
-                      <button 
-                        onClick={() => handleDelete(post.id)} 
-                        className="btn-secondary" 
-                        style={{ 
-                          padding: "6px 14px", 
-                          fontSize: 12, 
-                          color: "var(--status-error)", 
-                          borderColor: "rgba(239, 68, 68, 0.15)", 
-                          background: "rgba(239, 68, 68, 0.08)",
-                          borderRadius: "var(--radius-sm)"
+                      {post.status === "published" && post.linkedin_post_id && (
+                        <a
+                          href={`https://www.linkedin.com/feed/update/${post.linkedin_post_id}`}
+                          target="_blank" rel="noopener noreferrer"
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                            padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                            background: "#EFF6FF", color: "#1E40AF",
+                            border: "1px solid #BFDBFE", textDecoration: "none",
+                          }}
+                        >
+                          <Linkedin size={12} /> View
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", justifyContent: "center",
+                          width: 32, height: 32, borderRadius: 8, fontSize: 12,
+                          background: "transparent", color: "var(--muted-foreground)",
+                          border: "1px solid var(--border)", cursor: "pointer", transition: "all 0.15s ease",
                         }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#FEF2F2"; e.currentTarget.style.color = "#EF4444"; e.currentTarget.style.borderColor = "#FECACA"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--muted-foreground)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                       >
-                        🗑️ Delete
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
-
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

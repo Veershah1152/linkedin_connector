@@ -1,10 +1,10 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "LinkForge AI — LinkedIn Post Automation Platform",
+  title: "Lyra Suite — LinkedIn Content & Career Automation",
   description:
-    "Generate, schedule, and publish AI-powered LinkedIn posts. Grow your professional presence effortlessly with LinkForge AI.",
-  keywords: ["LinkedIn", "AI", "automation", "posts", "scheduling", "content generation"],
+    "Generate, schedule, and publish AI-powered LinkedIn posts. Build your resume, track analytics, and grow your professional brand — all from one dashboard.",
+  keywords: ["LinkedIn", "AI", "automation", "posts", "scheduling", "resume", "career"],
 };
 
 export default function RootLayout({ children }) {
@@ -13,9 +13,8 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body style={{ colorScheme: "light" }}>{children}</body>
     </html>
   );
 }
