@@ -256,7 +256,7 @@ const rollbackToVersion = async (userId, resumeId, versionNumber) => {
 const optimizeResume = async (userId, resumeId, targetRole) => {
   const resume = await getResumeById(userId, resumeId);
 
-  const systemPrompt = `You are an expert AI Resume Writer and recruiter specializing in the tech industry.
+  const systemPrompt = `You are a world-class Executive Resume Writer and FAANG technical recruiter.
 Your task is to optimize the user's resume for their target job role: "${targetRole}".
 
 Format your response strictly as a JSON object containing the optimized parts.
@@ -264,8 +264,8 @@ Do not wrap your answer in any text other than the JSON object itself.
 
 JSON Output Schema:
 {
-  "summary": "AI optimized professional summary matching the target role.",
-  "skills": ["Array", "of", "optimized", "skills", "including", "suggested", "keywords"],
+  "summary": "An elite, highly professional 2-3 sentence executive summary that positions the user as a top-tier candidate for the target role.",
+  "skills": ["Array", "of", "optimized", "skills", "including", "suggested", "ATS", "keywords"],
   "workExperience": [
     {
       "id": "original_id",
@@ -275,7 +275,7 @@ JSON Output Schema:
       "endDate": "original_end",
       "current": true_or_false,
       "location": "original_location",
-      "description": "Optimized bulleted description with rich action verbs, ATS keywords, and metrics where logical."
+      "description": "• Spearheaded highly professional, quantifiable achievements.\\n• Formatted exactly with markdown bullets (•).\\n• Use elite action verbs and STAR method."
     }
   ],
   "suggestedImprovements": [
@@ -289,11 +289,11 @@ JSON Output Schema:
 }
 
 Instructions for Optimization:
-1. SUMMARY: Write a short, highly professional, 2-3 sentence summary that positions the user as an expert for the target role.
-2. SKILLS: Preserve their existing skills but append critical technical and soft skills that are highly relevant to a "${targetRole}".
-3. WORK EXPERIENCE: Keep original metadata (company, dates) but re-write the description. Ensure descriptions use the STAR method (Situation, Task, Action, Result) with strong action verbs. Weave in key terms recruiters look for.
+1. SUMMARY: Write an executive-tier, highly professional summary without fluff. Focus on impact and senior-level phrasing.
+2. SKILLS: Preserve existing skills but append highly relevant technical/soft skills that ATS systems demand for a "${targetRole}".
+3. WORK EXPERIENCE: Keep original metadata (company, dates). Re-write the description. YOU MUST use bullet points starting with the '•' character. Each bullet MUST be punchy, quantifiable, and use the STAR method. Avoid generic phrasing.
 4. Keep the original ID values for work experience items so the frontend matches correctly.
-5. Provide helpful, concrete suggestions and missing skills.`;
+5. Make sure the tone is strictly professional, precise, and authoritative.`;
 
   const userPrompt = `Target Role: ${targetRole}
 Current Resume Content:

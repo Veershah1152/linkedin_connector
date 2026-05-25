@@ -8,7 +8,7 @@ const getDashboardStats = async (userId) => {
   // Total posts count by status
   const { data: posts, error: postsError } = await supabaseAdmin
     .from('posts')
-    .select('status')
+    .select('id, status')
     .eq('user_id', userId);
 
   if (postsError) throw new AppError('Failed to fetch analytics', 500);
@@ -19,30 +19,37 @@ const getDashboardStats = async (userId) => {
     drafts: posts.filter((p) => p.status === 'draft').length,
     scheduled: posts.filter((p) => p.status === 'scheduled').length,
     failed: posts.filter((p) => p.status === 'failed').length,
+    totalViews: 0,
+    totalLikes: 0,
+    totalComments: 0,
+    totalShares: 0,
+    totalClicks: 0,
+    avgEngagementRate: '0.00'
   };
 
-  // Aggregate engagement metrics
-  const { data: analytics, error: analyticsError } = await supabaseAdmin
-    .from('post_analytics')
-    .select('views, likes, comments, shares, clicks')
-    .in(
-      'post_id',
-      posts.filter((p) => p.status === 'published').map((p) => p.id) || ['none']
-    );
+  const publishedPostIds = posts.filter((p) => p.status === 'published').map((p) => p.id);
 
-  if (!analyticsError && analytics) {
-    stats.totalViews = analytics.reduce((sum, a) => sum + (a.views || 0), 0);
-    stats.totalLikes = analytics.reduce((sum, a) => sum + (a.likes || 0), 0);
-    stats.totalComments = analytics.reduce((sum, a) => sum + (a.comments || 0), 0);
-    stats.totalShares = analytics.reduce((sum, a) => sum + (a.shares || 0), 0);
-    stats.totalClicks = analytics.reduce((sum, a) => sum + (a.clicks || 0), 0);
-    stats.avgEngagementRate =
-      analytics.length > 0
-        ? (
-            analytics.reduce((sum, a) => sum + (a.engagement_rate || 0), 0) /
-            analytics.length
-          ).toFixed(2)
-        : '0.00';
+  if (publishedPostIds.length > 0) {
+    // Aggregate engagement metrics
+    const { data: analytics, error: analyticsError } = await supabaseAdmin
+      .from('post_analytics')
+      .select('views, likes, comments, shares, clicks, engagement_rate')
+      .in('post_id', publishedPostIds);
+
+    if (!analyticsError && analytics) {
+      stats.totalViews = analytics.reduce((sum, a) => sum + (a.views || 0), 0);
+      stats.totalLikes = analytics.reduce((sum, a) => sum + (a.likes || 0), 0);
+      stats.totalComments = analytics.reduce((sum, a) => sum + (a.comments || 0), 0);
+      stats.totalShares = analytics.reduce((sum, a) => sum + (a.shares || 0), 0);
+      stats.totalClicks = analytics.reduce((sum, a) => sum + (a.clicks || 0), 0);
+      stats.avgEngagementRate =
+        analytics.length > 0
+          ? (
+              analytics.reduce((sum, a) => sum + (a.engagement_rate || 0), 0) /
+              analytics.length
+            ).toFixed(2)
+          : '0.00';
+    }
   }
 
   return stats;

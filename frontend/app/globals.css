@@ -86,9 +86,9 @@ html {
   --brand-primary-light: #818CF8;
 }
 
-/* ------ STEP 3: @theme — fonts & radius only ------ */
-/* ⚠ Removed all color mappings from @theme to prevent
-      Tailwind v4 from auto-generating dark-mode overrides. */
+/* ------ STEP 3: @theme — fonts, radius & forced-light colors ------ */
+/* Hardcoded hex values ensure Tailwind utility classes work (bg-primary,
+   text-foreground, etc.) WITHOUT auto-generating dark-mode overrides.   */
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
@@ -99,6 +99,57 @@ html {
   --radius-lg:  calc(0.75rem + 4px);
   --radius-xl:  calc(0.75rem + 8px);
   --radius-2xl: calc(0.75rem + 12px);
+
+  /* ─── Core palette (forced light) ─── */
+  --color-background:           #F8F9FC;
+  --color-foreground:           #111827;
+  --color-card:                 #FFFFFF;
+  --color-card-foreground:      #111827;
+  --color-popover:              #FFFFFF;
+  --color-popover-foreground:   #111827;
+
+  --color-primary:              #6366F1;
+  --color-primary-foreground:   #FFFFFF;
+  --color-primary-hover:        #4F46E5;
+  --color-primary-light:        #EEF2FF;
+  --color-primary-medium:       #C7D2FE;
+
+  --color-secondary:            #F3F4F6;
+  --color-secondary-foreground: #374151;
+
+  --color-muted:                #F9FAFB;
+  --color-muted-foreground:     #6B7280;
+
+  --color-accent:               #8B5CF6;
+  --color-accent-foreground:    #FFFFFF;
+  --color-accent-light:         #F5F3FF;
+
+  --color-destructive:          #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-destructive-light:    #FEF2F2;
+
+  --color-success:              #10B981;
+  --color-success-foreground:   #FFFFFF;
+  --color-success-light:        #ECFDF5;
+
+  --color-warning:              #F59E0B;
+  --color-warning-foreground:   #92400E;
+  --color-warning-light:        #FFFBEB;
+
+  --color-border:               #E5E7EB;
+  --color-border-subtle:        #F3F4F6;
+  --color-input:                #FFFFFF;
+  --color-ring:                 #6366F1;
+
+  --color-sidebar:              #FFFFFF;
+  --color-sidebar-foreground:   #374151;
+  --color-sidebar-primary:      #6366F1;
+  --color-sidebar-border:       #F0F0F0;
+  --color-sidebar-accent:       #F3F4F6;
+  --color-sidebar-accent-foreground: #111827;
+
+  --color-white:                #FFFFFF;
+  --color-black:                #000000;
 }
 
 /* ------ STEP 4: Hard override — keep light even if OS = dark ------ */
@@ -255,6 +306,7 @@ body {
    UTILITIES
    ============================================= */
 .hero-gradient { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%); }
+.bg-gradient-brand { background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%); }
 .gradient-text {
   background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
   -webkit-background-clip: text;
@@ -263,6 +315,15 @@ body {
 }
 .glow { box-shadow: 0 0 0 3px rgba(99,102,241,0.15), 0 4px 12px rgba(99,102,241,0.2); }
 .font-display { font-family: "Instrument Serif", ui-serif, Georgia, serif; font-style: italic; letter-spacing: -0.01em; }
+
+/* Shadow utilities (for inline style references via var()) */
+:root {
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md:  0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg:  0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -4px rgba(0,0,0,0.05);
+  --shadow-xl:  0 20px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.05);
+  --shadow-glow: 0 0 0 3px rgba(99,102,241,0.15), 0 4px 12px rgba(99,102,241,0.2);
+}
 
 /* Status badges */
 .badge-success  { display:inline-flex;align-items:center;gap:4px;background:#ECFDF5;color:#065F46;border:1px solid rgba(16,185,129,0.2);font-size:11px;font-weight:700;padding:2px 8px;border-radius:9999px; }
@@ -277,6 +338,11 @@ body {
   animation: shimmer 1.8s infinite;
   border-radius: 8px;
 }
+
+/* Scrollbar — custom thin */
+.scrollbar::-webkit-scrollbar { width: 4px; }
+.scrollbar::-webkit-scrollbar-track { background: transparent; }
+.scrollbar::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 9999px; }
 
 /* =============================================
    ANIMATIONS
@@ -297,3 +363,15 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .animate-slide-down { animation: slideDown 0.25s ease forwards; }
+
+@keyframes loadBar {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+.animate-loadBar { animation: loadBar 1.5s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+

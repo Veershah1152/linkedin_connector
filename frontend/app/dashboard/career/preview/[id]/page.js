@@ -139,9 +139,9 @@ export default function ResumePreviewPage() {
       </div>
 
       {/* Screen UI */}
-      <div style={{ display: "flex", minHeight: "100vh", background: "#F8F9FC" }}>
+      <div className="mobile-stack" style={{ display: "flex", minHeight: "100vh", background: "#F8F9FC" }}>
         {/* Left Control Panel */}
-        <div style={{
+        <div className="mobile-w-full" style={{
           width: 280,
           background: "#FFFFFF",
           borderRight: "1px solid #E5E7EB",
@@ -273,7 +273,7 @@ export default function ResumePreviewPage() {
           </div>
 
           {/* A4 Resume Render */}
-          <div style={{ transform: "scale(0.88)", transformOrigin: "top center", marginBottom: -100, boxShadow: "0 10px 25px rgba(0,0,0,0.05)" }}>
+          <div className="mobile-scale-preview" style={{ transform: "scale(0.88)", transformOrigin: "top center", marginBottom: -100, boxShadow: "0 10px 25px rgba(0,0,0,0.05)" }}>
             {renderTemplate()}
           </div>
         </div>

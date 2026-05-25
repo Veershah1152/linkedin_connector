@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, PenSquare, Calendar, Archive,
   LineChart, Briefcase, Bell, Search, Plus, Zap,
-  ChevronLeft, ChevronRight, LogOut,
+  ChevronLeft, ChevronRight, LogOut, Menu, X
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -41,6 +41,7 @@ const C = {
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -60,8 +61,17 @@ export default function DashboardLayout({ children }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", background: C.pageBackground }}>
 
+      {/* Mobile Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          onClick={() => setMobileMenuOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 40 }}
+          className="md:hidden"
+        />
+      )}
+
       {/* ========== SIDEBAR ========== */}
-      <aside style={{
+      <aside className={`mobile-sidebar ${mobileMenuOpen ? 'open' : ''}`} style={{
         position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
         display: "flex", flexDirection: "column",
         background: C.sidebarBg,
@@ -199,14 +209,14 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* ========== MAIN AREA ========== */}
-      <div style={{
+      <div className="mobile-content" style={{
         flex: 1, display: "flex", flexDirection: "column", minWidth: 0,
         marginLeft: sidebarOpen ? 256 : 72,
         transition: "margin-left 0.25s cubic-bezier(0.4,0,0.2,1)",
       }}>
 
         {/* Sticky Header */}
-        <header style={{
+        <header className="mobile-header-padding" style={{
           height: 56, position: "sticky", top: 0, zIndex: 30,
           background: "rgba(255,255,255,0.92)",
           borderBottom: `1px solid ${C.headerBorder}`,
@@ -216,8 +226,17 @@ export default function DashboardLayout({ children }) {
           padding: "0 28px",
           display: "flex", alignItems: "center", gap: 12,
         }}>
+          {/* Hamburger Menu (Mobile Only) */}
+          <button 
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(true)}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "#111827", padding: "4px" }}
+          >
+            <Menu size={20} />
+          </button>
+
           {/* Breadcrumb */}
-          <nav style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.mutedFg, flex: 1 }}>
+          <nav className="mobile-hide" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.mutedFg, flex: 1 }}>
             <span style={{ color: "#9CA3AF" }}>Lyra</span>
             {crumbs.map((c, i) => (
               <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -234,7 +253,7 @@ export default function DashboardLayout({ children }) {
           </nav>
 
           {/* Search */}
-          <div style={{
+          <div className="mobile-hide" style={{
             display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
             borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, width: 220,
           }}>
@@ -271,7 +290,7 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page Content */}
-        <main className="animate-fade-in" style={{ flex: 1, padding: "32px 28px", maxWidth: 1400, width: "100%", margin: "0 auto", background: C.pageBackground }}>
+        <main className="animate-fade-in mobile-content" style={{ flex: 1, padding: "32px 28px", maxWidth: 1400, width: "100%", margin: "0 auto", background: C.pageBackground }}>
           {children}
         </main>
       </div>

@@ -370,6 +370,7 @@ export default function ResumeEditorPage() {
     { id: "summary", label: "📄 Profile Summary" },
     { id: "experience", label: "💼 Work Experience" },
     { id: "education", label: "🎓 Education History" },
+    { id: "certifications", label: "📜 Certifications" },
     { id: "skills", label: "⚡ Technical Skills" },
     { id: "projects", label: "🚀 Notable Projects" },
     { id: "achievements", label: "🏆 Key Achievements" },
@@ -398,10 +399,10 @@ export default function ResumeEditorPage() {
   const atsColor = atsTarget >= 85 ? "#10B981" : atsTarget >= 70 ? "#F59E0B" : "#EF4444";
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F8F9FC", color: "#111827", fontFamily: "Inter, sans-serif" }}>
+    <div className="mobile-stack" style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F8F9FC", color: "#111827", fontFamily: "Inter, sans-serif" }}>
 
       {/* Slim Navigation Sidebar */}
-      <div style={{
+      <div className="mobile-editor-menu" style={{
         width: 240,
         background: "#FFFFFF",
         borderRight: "1px solid #E5E7EB",
@@ -548,7 +549,7 @@ export default function ResumeEditorPage() {
         {/* ── CONTACT ── */}
         {activeSection === "contact" && (
           <EditorCard title="Contact & Personal Information">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <Field label="Full Name"><Input value={contact.fullName} onChange={v => update("contact_info.fullName", v)} placeholder="John Doe" /></Field>
               <Field label="Email Address"><Input value={contact.email} onChange={v => update("contact_info.email", v)} placeholder="john.doe@email.com" /></Field>
               <Field label="Phone Number"><Input value={contact.phone} onChange={v => update("contact_info.phone", v)} placeholder="+1 555 123 4567" /></Field>
@@ -558,7 +559,7 @@ export default function ResumeEditorPage() {
             </div>
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Social Links</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                 <Field label="LinkedIn Profile"><Input value={social.linkedin} onChange={v => update("social_links.linkedin", v)} placeholder="https://linkedin.com/in/..." /></Field>
                 <Field label="GitHub Profile"><Input value={social.github} onChange={v => update("social_links.github", v)} placeholder="https://github.com/..." /></Field>
                 <Field label="Portfolio Site"><Input value={social.portfolio} onChange={v => update("social_links.portfolio", v)} placeholder="https://yoursite.com" /></Field>
@@ -589,7 +590,7 @@ export default function ResumeEditorPage() {
             <SectionHeader title="" onAdd={() => addArrayItem("work_experience", { companyName: "", jobTitle: "", startDate: "", endDate: "", current: false, location: "", description: "" })} addLabel="Add Position" />
             {(resume.work_experience || []).map((exp, i) => (
               <ItemCard key={exp.id || i} onDelete={() => removeArrayItem("work_experience", i)}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                   <Field label="Job Title"><Input value={exp.jobTitle} onChange={v => updateArrayItem("work_experience", i, "jobTitle", v)} placeholder="Senior Software Engineer" /></Field>
                   <Field label="Company / Employer"><Input value={exp.companyName} onChange={v => updateArrayItem("work_experience", i, "companyName", v)} placeholder="Google Inc." /></Field>
                   <Field label="Start Date"><Input value={exp.startDate} onChange={v => updateArrayItem("work_experience", i, "startDate", v)} placeholder="e.g. Jan 2022" /></Field>
@@ -627,7 +628,7 @@ export default function ResumeEditorPage() {
             <SectionHeader title="" onAdd={() => addArrayItem("education", { schoolName: "", degree: "", fieldOfStudy: "", startDate: "", endDate: "", grade: "" })} addLabel="Add Education" />
             {(resume.education || []).map((edu, i) => (
               <ItemCard key={edu.id || i} onDelete={() => removeArrayItem("education", i)}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <Field label="Institution / School"><Input value={edu.schoolName} onChange={v => updateArrayItem("education", i, "schoolName", v)} placeholder="Stanford University" /></Field>
                   <Field label="Degree Obtained"><Input value={edu.degree} onChange={v => updateArrayItem("education", i, "degree", v)} placeholder="Master of Science" /></Field>
                   <Field label="Field of Study"><Input value={edu.fieldOfStudy} onChange={v => updateArrayItem("education", i, "fieldOfStudy", v)} placeholder="Computer Science" /></Field>
@@ -676,7 +677,7 @@ export default function ResumeEditorPage() {
             <SectionHeader title="" onAdd={() => addArrayItem("projects", { name: "", role: "", url: "", description: "" })} addLabel="Add Project" />
             {(resume.projects || []).map((proj, i) => (
               <ItemCard key={proj.id || i} onDelete={() => removeArrayItem("projects", i)}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                   <Field label="Project Name"><Input value={proj.name} onChange={v => updateArrayItem("projects", i, "name", v)} placeholder="AI Post Planner Platform" /></Field>
                   <Field label="Project Role"><Input value={proj.role} onChange={v => updateArrayItem("projects", i, "role", v)} placeholder="Creator & Lead Developer" /></Field>
                   <Field label="URL (GitHub / Live Site)"><Input value={proj.url} onChange={v => updateArrayItem("projects", i, "url", v)} placeholder="https://github.com/..." /></Field>
@@ -688,6 +689,25 @@ export default function ResumeEditorPage() {
             ))}
             {(resume.projects || []).length === 0 && (
               <p style={{ color: "#6B7280", fontSize: 13, textAlign: "center", padding: 32 }}>No projects added yet.</p>
+            )}
+          </EditorCard>
+        )}
+
+        {/* ── CERTIFICATIONS ── */}
+        {activeSection === "certifications" && (
+          <EditorCard title="Certifications & Licenses">
+            <SectionHeader title="" onAdd={() => addArrayItem("certifications", { title: "", issuingOrganization: "", issueDate: "" })} addLabel="Add Certification" />
+            {(resume.certifications || []).map((cert, i) => (
+              <ItemCard key={cert.id || i} onDelete={() => removeArrayItem("certifications", i)}>
+                <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  <Field label="Certification Name"><Input value={cert.title} onChange={v => updateArrayItem("certifications", i, "title", v)} placeholder="AWS Certified Solutions Architect" /></Field>
+                  <Field label="Issuing Organization"><Input value={cert.issuingOrganization || cert.issuing_organization} onChange={v => updateArrayItem("certifications", i, "issuingOrganization", v)} placeholder="Amazon Web Services" /></Field>
+                  <Field label="Issue Date"><Input value={cert.issueDate || cert.issue_date} onChange={v => updateArrayItem("certifications", i, "issueDate", v)} placeholder="August 2023" /></Field>
+                </div>
+              </ItemCard>
+            ))}
+            {(resume.certifications || []).length === 0 && (
+              <p style={{ color: "#6B7280", fontSize: 13, textAlign: "center", padding: 32 }}>No certifications added yet.</p>
             )}
           </EditorCard>
         )}
@@ -726,7 +746,7 @@ export default function ResumeEditorPage() {
               Set your target ATS score and role below. Our engine analyzes structural patterns and keyword alignments, rewriting matching sections seamlessly.
             </p>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+            <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
               <Field label="Target Role Placement">
                 <select
                   value={atsRole}

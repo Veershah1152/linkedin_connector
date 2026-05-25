@@ -193,7 +193,7 @@ export default function PostsPage() {
       {/* Table */}
       <div style={{ background: "white", borderRadius: 16, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", overflow: "hidden" }}>
         {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr auto auto auto", gap: 16, padding: "10px 20px", borderBottom: "1px solid #F3F4F6", background: "#F9FAFB", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#9CA3AF", alignItems: "center" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr auto auto 140px", gap: 16, padding: "10px 20px", borderBottom: "1px solid #F3F4F6", background: "#F9FAFB", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#9CA3AF", alignItems: "center" }}>
           <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#6366F1" }} />
           <span>Content</span>
           <span>Source</span>
@@ -223,7 +223,7 @@ export default function PostsPage() {
                 <div
                   key={post.id}
                   style={{
-                    display: "grid", gridTemplateColumns: "auto 1fr auto auto auto",
+                    display: "grid", gridTemplateColumns: "40px 1fr auto auto 140px",
                     gap: 16, padding: "14px 20px", alignItems: "center",
                     borderBottom: idx < filteredPosts.length - 1 ? "1px solid #F9FAFB" : "none",
                     opacity: isBusy ? 0.5 : 1, pointerEvents: isBusy ? "none" : "auto",

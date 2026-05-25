@@ -103,7 +103,7 @@ export default function SchedulePage() {
       </div>
 
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
           {days.map((_, idx) => (
             <div key={idx} style={{ height: 160, borderRadius: 12 }} className="skeleton" />
           ))}
@@ -120,7 +120,7 @@ export default function SchedulePage() {
           </Link>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
           {days.map((d) => {
             const key = d.toDateString();
             const items = postsByDay.get(key) || [];
@@ -130,10 +130,10 @@ export default function SchedulePage() {
               <div
                 key={d.toISOString()}
                 style={{
-                  background: "white", borderRadius: 14, padding: "12px 10px",
+                  background: "white", borderRadius: 14, padding: "10px 8px",
                   minHeight: 160, border: isToday ? "2px solid #6366F1" : "1px solid #E5E7EB",
                   boxShadow: isToday ? "0 0 0 4px rgba(99,102,241,0.08)" : "0 1px 4px rgba(0,0,0,0.04)",
-                  display: "flex", flexDirection: "column",
+                  display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>

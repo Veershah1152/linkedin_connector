@@ -28,6 +28,37 @@ import {
   LayoutGrid
 } from "lucide-react";
 
+/* ─── Design Tokens (forced light, matching layout.js) ─── */
+const T = {
+  pageBg:       "#F8F9FC",
+  cardBg:       "#FFFFFF",
+  fg:           "#111827",
+  fgSecondary:  "#374151",
+  muted:        "#6B7280",
+  mutedLight:   "#9CA3AF",
+  border:       "#E5E7EB",
+  borderSubtle: "#F3F4F6",
+  inputBg:      "#FFFFFF",
+  secondary:    "#F3F4F6",
+  primary:      "#6366F1",
+  primaryHover: "#4F46E5",
+  primaryLight: "#EEF2FF",
+  primaryMedium:"#C7D2FE",
+  accent:       "#8B5CF6",
+  success:      "#10B981",
+  successLight: "#ECFDF5",
+  destructive:  "#EF4444",
+  destructiveLight: "#FEF2F2",
+  warning:      "#F59E0B",
+  warningLight: "#FFFBEB",
+  shadow:       "0 1px 3px rgba(0,0,0,0.05)",
+  shadowMd:     "0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05)",
+  shadowGlow:   "0 0 0 3px rgba(99,102,241,0.15), 0 4px 12px rgba(99,102,241,0.2)",
+  radius:       12,
+  radiusLg:     16,
+  radiusXl:     20,
+};
+
 const TEMPLATE_OPTIONS = [
   { id: "modern",    label: "Modern",    emoji: "🎨", desc: "Two-column sidebar" },
   { id: "classic",   label: "Classic",   emoji: "🎓", desc: "Traditional serif" },
@@ -46,6 +77,69 @@ const TARGET_ROLES = [
   "Data Scientist"
 ];
 
+/* ─── Reusable style objects ─── */
+const cardStyle = {
+  background: T.cardBg,
+  border: `1px solid ${T.border}`,
+  borderRadius: T.radiusLg,
+  boxShadow: T.shadow,
+  padding: 24,
+};
+
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  color: T.muted,
+  display: "block",
+  marginBottom: 6,
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "10px 14px",
+  background: T.inputBg,
+  border: `1px solid ${T.border}`,
+  borderRadius: 8,
+  color: T.fg,
+  fontSize: 14,
+  outline: "none",
+  fontFamily: "inherit",
+  transition: "all 0.2s ease",
+};
+
+const btnPrimary = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  background: T.primary,
+  color: "#FFFFFF",
+  padding: "10px 20px",
+  borderRadius: 8,
+  fontWeight: 600,
+  fontSize: 14,
+  cursor: "pointer",
+  border: "none",
+  transition: "all 0.2s ease",
+  boxShadow: "0 1px 3px rgba(99,102,241,0.3)",
+};
+
+const btnSecondary = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  background: T.cardBg,
+  color: T.fgSecondary,
+  border: `1px solid ${T.border}`,
+  padding: "10px 20px",
+  borderRadius: 8,
+  fontWeight: 500,
+  fontSize: 14,
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+};
+
 export default function CareerDashboard() {
   const router = useRouter();
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
@@ -63,28 +157,23 @@ export default function CareerDashboard() {
   const [activeTab, setActiveTab] = useState("builder");
   const [showCompletionBanner, setShowCompletionBanner] = useState(false);
 
-  // Unified PDF / Copy-Paste Imports (LinkedIn & Previous CV)
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [parsingProfile, setParsingProfile] = useState(false);
   const [syncError, setSyncError] = useState("");
 
-  // LinkedIn State
   const [linkedinFile, setLinkedinFile] = useState(null);
   const [linkedinText, setLinkedinText] = useState("");
   const [dragActiveLinkedin, setDragActiveLinkedin] = useState(false);
   const linkedinInputRef = useRef(null);
 
-  // CV State
   const [cvFile, setCvFile] = useState(null);
   const [cvText, setCvText] = useState("");
   const [dragActiveCv, setDragActiveCv] = useState(false);
   const cvInputRef = useRef(null);
 
-  // Expanded views for pasting fallback
   const [showPasteLinkedin, setShowPasteLinkedin] = useState(false);
   const [showPasteCv, setShowPasteCv] = useState(false);
 
-  // Local draft states for instant/optimistic UI typing without lag
   const [resumeDraft, setResumeDraft] = useState({
     title: "",
     target_role: "",
@@ -92,7 +181,6 @@ export default function CareerDashboard() {
     skills: []
   });
 
-  // Cert upload state
   const [certFile, setCertFile] = useState(null);
   const [certDetails, setCertDetails] = useState({
     title: "",
@@ -105,83 +193,54 @@ export default function CareerDashboard() {
 
   const saveTimeoutRef = useRef(null);
 
-  // Drag & drop handlers for LinkedIn Import
+  /* ─── Drag & Drop Handlers ─── */
   const handleDragLinkedin = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActiveLinkedin(true);
-    } else if (e.type === "dragleave") {
-      setDragActiveLinkedin(false);
-    }
+    e.preventDefault(); e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActiveLinkedin(true);
+    else if (e.type === "dragleave") setDragActiveLinkedin(false);
   };
 
   const handleDropLinkedin = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActiveLinkedin(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    e.preventDefault(); e.stopPropagation(); setDragActiveLinkedin(false);
+    if (e.dataTransfer.files?.[0]) {
       const file = e.dataTransfer.files[0];
-      if (file.type === "application/pdf") {
-        setLinkedinFile(file);
-        setSyncError("");
-      } else {
-        setSyncError("Only PDF files are supported for LinkedIn profile imports.");
-      }
+      if (file.type === "application/pdf") { setLinkedinFile(file); setSyncError(""); }
+      else setSyncError("Only PDF files are supported for LinkedIn profile imports.");
     }
   };
 
   const handleFileChangeLinkedin = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      if (file.type === "application/pdf") {
-        setLinkedinFile(file);
-        setSyncError("");
-      } else {
-        setSyncError("Only PDF files are supported for LinkedIn profile imports.");
-      }
+      if (file.type === "application/pdf") { setLinkedinFile(file); setSyncError(""); }
+      else setSyncError("Only PDF files are supported for LinkedIn profile imports.");
     }
   };
 
-  // Drag & drop handlers for CV Import
   const handleDragCv = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActiveCv(true);
-    } else if (e.type === "dragleave") {
-      setDragActiveCv(false);
-    }
+    e.preventDefault(); e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActiveCv(true);
+    else if (e.type === "dragleave") setDragActiveCv(false);
   };
 
   const handleDropCv = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActiveCv(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    e.preventDefault(); e.stopPropagation(); setDragActiveCv(false);
+    if (e.dataTransfer.files?.[0]) {
       const file = e.dataTransfer.files[0];
-      if (file.type === "application/pdf") {
-        setCvFile(file);
-        setSyncError("");
-      } else {
-        setSyncError("Only PDF files are supported for CV imports.");
-      }
+      if (file.type === "application/pdf") { setCvFile(file); setSyncError(""); }
+      else setSyncError("Only PDF files are supported for CV imports.");
     }
   };
 
   const handleFileChangeCv = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       const file = e.target.files[0];
-      if (file.type === "application/pdf") {
-        setCvFile(file);
-        setSyncError("");
-      } else {
-        setSyncError("Only PDF files are supported for CV imports.");
-      }
+      if (file.type === "application/pdf") { setCvFile(file); setSyncError(""); }
+      else setSyncError("Only PDF files are supported for CV imports.");
     }
   };
 
-  // Concurrent loading logic
+  /* ─── Data Loading ─── */
   useEffect(() => {
     const loadAllData = async () => {
       try {
@@ -189,7 +248,6 @@ export default function CareerDashboard() {
           api.getResumes(),
           api.getCertifications()
         ]);
-
         if (resumesRes.success) {
           const loadedResumes = resumesRes.data || [];
           setResumes(loadedResumes);
@@ -208,72 +266,49 @@ export default function CareerDashboard() {
             fetchVersions(firstResume.id);
           }
         }
-
-        if (certsRes.success) {
-          setCertifications(certsRes.data || []);
-        }
+        if (certsRes.success) setCertifications(certsRes.data || []);
       } catch (err) {
         console.error("Error loading career data:", err);
       } finally {
         setLoading(false);
       }
     };
-
     loadAllData();
   }, []);
 
   const fetchResumes = async () => {
     try {
       const data = await api.getResumes();
-      if (data.success) {
-        setResumes(data.data || []);
-      }
-    } catch (err) {
-      console.error("Error fetching resumes:", err);
-    }
+      if (data.success) setResumes(data.data || []);
+    } catch (err) { console.error("Error fetching resumes:", err); }
   };
 
   const fetchVersions = async (resumeId) => {
     try {
       const data = await api.getResumeVersions(resumeId);
-      if (data.success) {
-        setVersions(data.data || []);
-      }
-    } catch (err) {
-      console.error("Error fetching versions:", err);
-    }
+      if (data.success) setVersions(data.data || []);
+    } catch (err) { console.error("Error fetching versions:", err); }
   };
 
   const fetchCertifications = async () => {
     try {
       const data = await api.getCertifications();
-      if (data.success) {
-        setCertifications(data.data || []);
-      }
-    } catch (err) {
-      console.error("Error fetching certifications:", err);
-    }
+      if (data.success) setCertifications(data.data || []);
+    } catch (err) { console.error("Error fetching certifications:", err); }
   };
 
-  // Submit profile files or text for merge & parse
+  /* ─── Profile Parse Submit ─── */
   const handleProfileParseSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!linkedinFile && !linkedinText.trim() && !cvFile && !cvText.trim()) {
       setSyncError("Please provide at least one source (LinkedIn PDF or old CV) to build your resume.");
       return;
     }
-
-    setParsingProfile(true);
-    setSyncError("");
-
+    setParsingProfile(true); setSyncError("");
     try {
       const response = await api.parseLinkedInProfile(linkedinFile, cvFile, linkedinText, cvText);
       if (response.success) {
-        setShowSyncModal(false);
-        setLinkedinFile(null);
-        setLinkedinText("");
-        setCvFile(null);
-        setCvText("");
+        setShowSyncModal(false); setLinkedinFile(null); setLinkedinText(""); setCvFile(null); setCvText("");
         await fetchResumes();
         router.push(`/dashboard/career/editor/${response.data.id}`);
       } else {
@@ -287,7 +322,7 @@ export default function CareerDashboard() {
     }
   };
 
-  // Create manual blank resume
+  /* ─── Create Manual Resume ─── */
   const handleCreateManualResume = async () => {
     setCreating(true);
     try {
@@ -295,24 +330,11 @@ export default function CareerDashboard() {
         title: `My Resume (${new Date().toLocaleDateString()})`,
         targetRole: "Full Stack Developer",
         templateId: "modern",
-        summary: "",
-        skills: [],
-        workExperience: [],
-        education: [],
-        certifications: [],
-        achievements: [],
-        socialLinks: {
-          linkedin: "",
-          github: "",
-          portfolio: ""
-        },
-        contactInfo: {
-          email: "",
-          fullName: "",
-          profilePicture: null
-        }
+        summary: "", skills: [], workExperience: [], education: [],
+        certifications: [], achievements: [],
+        socialLinks: { linkedin: "", github: "", portfolio: "" },
+        contactInfo: { email: "", fullName: "", profilePicture: null }
       });
-
       if (newResume.success) {
         const freshResume = newResume.data;
         setActiveResume(freshResume);
@@ -334,48 +356,27 @@ export default function CareerDashboard() {
     }
   };
 
-  // Debounced background save
+  /* ─── Debounced Save ─── */
   const saveResumeDraftToBackend = useCallback(async (resumeId, fields) => {
     try {
       await api.updateResume(resumeId, fields);
-      fetchResumes();
-      fetchVersions(resumeId);
-    } catch (err) {
-      console.error("Error saving resume changes:", err);
-    }
+      fetchResumes(); fetchVersions(resumeId);
+    } catch (err) { console.error("Error saving resume changes:", err); }
   }, []);
 
-  // Handle draft field changes optimistically
   const handleDraftChange = (field, value) => {
     if (!activeResume) return;
-
     const updatedDraft = { ...resumeDraft, [field]: value };
     setResumeDraft(updatedDraft);
-
-    const dbFieldMap = {
-      title: "title",
-      target_role: "targetRole",
-      summary: "summary",
-      skills: "skills"
-    };
-
-    setActiveResume(prev => ({
-      ...prev,
-      [field === "target_role" ? "target_role" : field]: value
-    }));
-
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
+    const dbFieldMap = { title: "title", target_role: "targetRole", summary: "summary", skills: "skills" };
+    setActiveResume(prev => ({ ...prev, [field === "target_role" ? "target_role" : field]: value }));
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      saveResumeDraftToBackend(activeResume.id, {
-        [dbFieldMap[field]]: value
-      });
+      saveResumeDraftToBackend(activeResume.id, { [dbFieldMap[field]]: value });
     }, 1000);
   };
 
-  // Optimize resume via backend AI
+  /* ─── Optimize ─── */
   const handleOptimizeResume = async () => {
     if (!activeResume) return;
     setOptimizing(true);
@@ -385,106 +386,80 @@ export default function CareerDashboard() {
         const optimized = data.data.resume;
         setActiveResume(optimized);
         setResumeDraft({
-          title: optimized.title || "",
-          target_role: optimized.target_role || "",
-          summary: optimized.summary || "",
-          skills: optimized.skills || []
+          title: optimized.title || "", target_role: optimized.target_role || "",
+          summary: optimized.summary || "", skills: optimized.skills || []
         });
-        alert(`Resume successfully optimized for the ${selectedRole} role! Relevant ATS keywords and STAR styling added.`);
-        fetchResumes();
-        fetchVersions(activeResume.id);
+        alert(`Resume optimized for ${selectedRole}!`);
+        fetchResumes(); fetchVersions(activeResume.id);
       }
     } catch (err) {
       console.error("Optimization failed:", err);
       alert("AI optimization failed: " + err.message);
-    } finally {
-      setOptimizing(false);
-    }
+    } finally { setOptimizing(false); }
   };
 
-  // Run ATS compatibility gap scan
+  /* ─── ATS Scan ─── */
   const handleATSScan = async () => {
     if (!activeResume) return;
     setScanning(true);
     try {
       const data = await api.analyzeATS(activeResume.id, selectedRole);
-      if (data.success) {
-        setAtsReport(data.data.analysis);
-        fetchResumes();
-      }
+      if (data.success) { setAtsReport(data.data.analysis); fetchResumes(); }
     } catch (err) {
       console.error("ATS scanning failed:", err);
       alert("ATS scanning failed: " + err.message);
-    } finally {
-      setScanning(false);
-    }
+    } finally { setScanning(false); }
   };
 
-  // Rollback to previous version snapshot
+  /* ─── Rollback ─── */
   const handleRollback = async (versionNum) => {
     if (!activeResume) return;
-    if (!confirm(`Are you sure you want to rollback to version ${versionNum}? This will overwrite your current changes.`)) return;
+    if (!confirm(`Rollback to version ${versionNum}? This will overwrite current changes.`)) return;
     try {
       const data = await api.rollbackResumeVersion(activeResume.id, versionNum);
       if (data.success) {
         const rolledBack = data.data;
         setActiveResume(rolledBack);
         setResumeDraft({
-          title: rolledBack.title || "",
-          target_role: rolledBack.target_role || "",
-          summary: rolledBack.summary || "",
-          skills: rolledBack.skills || []
+          title: rolledBack.title || "", target_role: rolledBack.target_role || "",
+          summary: rolledBack.summary || "", skills: rolledBack.skills || []
         });
-        fetchResumes();
-        fetchVersions(activeResume.id);
-        alert(`Successfully rolled back to version ${versionNum}.`);
+        fetchResumes(); fetchVersions(activeResume.id);
+        alert(`Rolled back to version ${versionNum}.`);
       }
     } catch (err) {
-      console.error("Rollback failed:", err);
-      alert("Rollback failed: " + err.message);
+      console.error("Rollback failed:", err); alert("Rollback failed: " + err.message);
     }
   };
 
-  // Upload credential to vault
+  /* ─── Certifications ─── */
   const handleUploadCert = async (e) => {
     e.preventDefault();
     if (!certDetails.title || !certDetails.issuingOrganization) {
-      alert("Please fill in the certification title and issuing organization.");
-      return;
+      alert("Please fill in the certification title and issuing organization."); return;
     }
     setUploadingCert(true);
     try {
       const data = await api.uploadCertification(certFile, certDetails);
       if (data.success) {
         alert("Certification uploaded successfully!");
-        setCertDetails({
-          title: "",
-          issuingOrganization: "",
-          issueDate: "",
-          credentialId: "",
-          credentialUrl: ""
-        });
-        setCertFile(null);
-        fetchCertifications();
+        setCertDetails({ title: "", issuingOrganization: "", issueDate: "", credentialId: "", credentialUrl: "" });
+        setCertFile(null); fetchCertifications();
       }
     } catch (err) {
       console.error("Upload cert error:", err);
       alert("Certification upload failed: " + err.message);
-    } finally {
-      setUploadingCert(false);
-    }
+    } finally { setUploadingCert(false); }
   };
 
-  // Publish certification directly / share credential pre-filled redirect
   const handlePublishCert = async (certId) => {
     try {
       const data = await api.publishCertification(certId);
       if (data.success) {
         if (data.directPublished) {
-          alert("Successfully published directly to your LinkedIn Profile certifications section!");
-          fetchCertifications();
+          alert("Published to LinkedIn!"); fetchCertifications();
         } else if (data.sharingUrl) {
-          alert("LinkedIn API restricted direct publishing. Redirecting to pre-filled certification sharing form...");
+          alert("Redirecting to LinkedIn pre-filled form...");
           window.open(data.sharingUrl, "_blank");
         }
       }
@@ -496,538 +471,521 @@ export default function CareerDashboard() {
 
   const getProfileCompletion = () => {
     if (!activeResume) return 0;
-    let points = 0;
-    if (activeResume.summary) points += 20;
-    if (activeResume.skills && activeResume.skills.length > 0) points += 20;
-    if (activeResume.work_experience && activeResume.work_experience.length > 0) points += 20;
-    if (activeResume.education && activeResume.education.length > 0) points += 15;
-    if (activeResume.certifications && activeResume.certifications.length > 0) points += 15;
-    if (activeResume.social_links && Object.keys(activeResume.social_links).length > 0) points += 10;
-    return points;
+    let p = 0;
+    if (activeResume.summary) p += 20;
+    if (activeResume.skills?.length > 0) p += 20;
+    if (activeResume.work_experience?.length > 0) p += 20;
+    if (activeResume.education?.length > 0) p += 15;
+    if (activeResume.certifications?.length > 0) p += 15;
+    if (activeResume.social_links && Object.keys(activeResume.social_links).length > 0) p += 10;
+    return p;
   };
 
+  /* ─── Tab Config ─── */
+  const tabs = [
+    { id: "builder", label: "Builder", emoji: "📝", icon: FileText },
+    { id: "optimize", label: "AI Optimizer", emoji: "🪄", icon: Sparkles },
+    { id: "ats", label: "ATS Scan", emoji: "📊", icon: ShieldCheck },
+    { id: "certifications", label: "Certifications", emoji: "🏅", icon: Award },
+  ];
+
+  /* ─── Loading State ─── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: "50%",
+          border: `4px solid ${T.primary}`,
+          borderTopColor: "transparent",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  /* ─────────────────── RENDER ─────────────────── */
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in text-foreground">
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }} className="animate-fade-in">
 
-      {/* Header Banner */}
-      <header style={{background:"linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%)",borderRadius:20,color:"white",position:"relative",overflow:"hidden"}} className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6">
-        <div className="space-y-2 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-            <Sparkles className="size-3.5" /> AI Powered Workspace
+      {/* ═══ HEADER BANNER ═══ */}
+      <header style={{
+        background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
+        borderRadius: T.radiusXl,
+        padding: "28px 32px",
+        color: "#FFFFFF",
+        position: "relative",
+        overflow: "hidden",
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 24,
+        marginBottom: 32,
+      }}>
+        {/* Decorative circles */}
+        <div style={{ position: "absolute", right: -40, top: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+        <div style={{ position: "absolute", right: 60, bottom: -60, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+
+        <div style={{ maxWidth: 520, position: "relative", zIndex: 1 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "4px 12px", borderRadius: 9999,
+            background: "rgba(255,255,255,0.15)",
+            fontSize: 12, fontWeight: 600, color: "#FFFFFF",
+            marginBottom: 12,
+          }}>
+            <Sparkles size={14} /> AI Powered Workspace
           </div>
-          <h1 className="text-3xl font-bold tracking-tight font-sans" style={{color:"white"}}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.2, color: "#FFFFFF", marginBottom: 8 }}>
             Career & Resume Hub
           </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>
             Sync LinkedIn profiles, build targeted resumes, audit ATS gaps, and publish certifications directly to your live feeds.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3 shrink-0">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, position: "relative", zIndex: 1 }}>
           <button
             onClick={() => setShowSyncModal(true)}
             disabled={parsingProfile || creating}
-            className="btn-primary"
+            style={{
+              ...btnPrimary,
+              background: "rgba(255,255,255,0.2)",
+              backdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              color: "#FFFFFF",
+              boxShadow: "none",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.3)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.2)"; }}
           >
-            <Linkedin className="size-4" /> Import LinkedIn / CV
+            <Linkedin size={16} /> Import LinkedIn / CV
           </button>
           <button
             onClick={handleCreateManualResume}
             disabled={syncing || creating}
-            className="btn-secondary"
+            style={{
+              ...btnSecondary,
+              background: "#FFFFFF",
+              color: T.primary,
+              border: "none",
+              fontWeight: 700,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.15)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)"; }}
           >
-            <Plus className="size-4" /> Create Manually
+            <Plus size={16} /> Create Manually
           </button>
         </div>
       </header>
 
       {activeResume ? (
-        <div className="grid lg:grid-cols-[1fr_320px] gap-8 items-start">
-          {/* Main workspace (Left side) */}
-          <div className="space-y-6">
-            {/* Tabs List Navigation */}
-            <div className="flex h-11 items-center gap-1 rounded-xl bg-card border border-border p-1">
-              {[
-                { id: "builder", label: "📝 Builder", icon: FileText },
-                { id: "optimize", label: "🪄 AI Optimizer", icon: Sparkles },
-                { id: "ats", label: "📊 ATS Scan", icon: ShieldCheck },
-                { id: "certifications", label: "🏅 Certifications", icon: Award }
-              ].map(tab => {
-                const Icon = tab.icon;
+        <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 32, alignItems: "start" }}>
+
+          {/* ═══ MAIN WORKSPACE ═══ */}
+          <div>
+            {/* Tab Navigation */}
+            <div style={{
+              display: "flex", gap: 4, padding: 4,
+              background: T.cardBg, border: `1px solid ${T.border}`,
+              borderRadius: T.radius, marginBottom: 24,
+              boxShadow: T.shadow,
+            }}>
+              {tabs.map(tab => {
                 const active = activeTab === tab.id;
+                const Icon = tab.icon;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex items-center justify-center gap-2 h-full rounded-lg text-sm font-medium transition-all duration-300 ${
-                      active 
-                        ? "bg-primary text-primary-foreground shadow-sm" 
-                        : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-                    }`}
+                    style={{
+                      flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      padding: "10px 12px", borderRadius: 8,
+                      fontSize: 13, fontWeight: active ? 700 : 500,
+                      color: active ? "#FFFFFF" : T.muted,
+                      background: active ? T.primary : "transparent",
+                      border: "none", cursor: "pointer",
+                      transition: "all 0.25s ease",
+                      boxShadow: active ? "0 2px 8px rgba(99,102,241,0.3)" : "none",
+                    }}
+                    onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = T.secondary; e.currentTarget.style.color = T.fg; }}}
+                    onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.muted; }}}
                   >
-                    <Icon className="size-4" />
-                    <span>{tab.label}</span>
+                    <Icon size={16} />
+                    <span>{tab.emoji} {tab.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* TAB CONTENT: RESUME BUILDER */}
+            {/* ─── TAB: BUILDER ─── */}
             {activeTab === "builder" && (
-              <div className="glass p-6 rounded-2xl space-y-6">
-                <div className="flex items-center justify-between border-b border-border pb-4">
+              <div style={cardStyle}>
+                {/* Header row */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 16, marginBottom: 20 }}>
                   <div>
-                    <h2 className="text-lg font-bold text-foreground">Interactive Resume Info</h2>
-                    <p className="text-xs text-muted-foreground">Changes are auto-saved to cloud draft instantly.</p>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg }}>Interactive Resume Info</h2>
+                    <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Changes are auto-saved to cloud draft instantly.</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs px-2.5 py-1 rounded bg-secondary/80 text-muted-foreground border border-border">
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, background: T.secondary, color: T.muted, border: `1px solid ${T.border}` }}>
                       v{activeResume.version}
                     </span>
                     <button
                       onClick={() => router.push(`/dashboard/career/editor/${activeResume.id}`)}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: T.primary, background: "none", border: "none", cursor: "pointer" }}
                     >
-                      <Wand2 className="size-3.5" /> Full Split Editor <ChevronRight className="size-3" />
+                      <Wand2 size={14} /> Full Split Editor <ChevronRight size={12} />
                     </button>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Resume Title</label>
-                    <input 
-                      type="text" 
+                {/* Form fields */}
+                <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  <div>
+                    <label style={labelStyle}>Resume Title</label>
+                    <input
+                      type="text"
                       value={resumeDraft.title}
                       onChange={(e) => handleDraftChange("title", e.target.value)}
-                      className="input"
+                      style={inputStyle}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Target Job Role</label>
-                    <input 
-                      type="text" 
+                  <div>
+                    <label style={labelStyle}>Target Job Role</label>
+                    <input
+                      type="text"
                       value={resumeDraft.target_role}
                       placeholder="e.g. Full Stack Developer"
                       onChange={(e) => handleDraftChange("target_role", e.target.value)}
-                      className="input"
+                      style={inputStyle}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Professional Profile Summary</label>
-                  <textarea 
+                <div style={{ marginBottom: 16 }}>
+                  <label style={labelStyle}>Professional Profile Summary</label>
+                  <textarea
                     value={resumeDraft.summary}
                     rows={4}
                     onChange={(e) => handleDraftChange("summary", e.target.value)}
-                    className="input resize-none h-28 leading-relaxed"
+                    style={{ ...inputStyle, resize: "none", height: 112, lineHeight: 1.7 }}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">Technical Skills (Comma Separated)</label>
-                  <input 
-                    type="text" 
+                <div style={{ marginBottom: 20 }}>
+                  <label style={labelStyle}>Technical Skills (Comma Separated)</label>
+                  <input
+                    type="text"
                     value={resumeDraft.skills.join(", ")}
                     placeholder="e.g. TypeScript, React, Next.js, PostgreSQL"
                     onChange={(e) => handleDraftChange("skills", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-                    className="input"
+                    style={inputStyle}
                   />
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {resumeDraft.skills.map((skill, index) => (
-                      <span 
-                        key={index} 
-                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs px-2.5 py-1 font-medium border border-primary/15"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
+                  {resumeDraft.skills.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                      {resumeDraft.skills.map((skill, idx) => (
+                        <span key={idx} style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          padding: "4px 12px", borderRadius: 9999,
+                          background: T.primaryLight, color: T.primary,
+                          fontSize: 12, fontWeight: 600,
+                          border: `1px solid ${T.primaryMedium}`,
+                        }}>
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Work experience summary list */}
-                {activeResume.work_experience && activeResume.work_experience.length > 0 && (
-                  <div className="space-y-3 pt-2">
-                    <h3 className="text-sm font-bold text-white border-b border-border pb-2">Experience Overview</h3>
-                    <div className="space-y-3">
+                {/* Work experience summary */}
+                {activeResume.work_experience?.length > 0 && (
+                  <div style={{ marginBottom: 20 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: T.fg, borderBottom: `1px solid ${T.border}`, paddingBottom: 8, marginBottom: 12 }}>Experience Overview</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       {activeResume.work_experience.slice(0, 3).map((exp, idx) => (
-                        <div key={idx} className="flex justify-between items-start p-3 rounded-lg bg-secondary border border-border">
+                        <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "start", padding: 12, borderRadius: 10, background: T.secondary, border: `1px solid ${T.border}` }}>
                           <div>
-                            <div className="text-sm font-semibold text-foreground">{exp.jobTitle}</div>
-                            <div className="text-xs text-muted-foreground">{exp.companyName}</div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: T.fg }}>{exp.jobTitle}</div>
+                            <div style={{ fontSize: 12, color: T.muted }}>{exp.companyName}</div>
                           </div>
-                          <span className="text-xs text-muted-foreground">{exp.startDate} - {exp.current ? "Present" : exp.endDate}</span>
+                          <span style={{ fontSize: 12, color: T.muted }}>{exp.startDate} - {exp.current ? "Present" : exp.endDate}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* Bottom actions toolbar */}
-                <div className="flex flex-wrap justify-between items-center gap-4 pt-4 border-t border-border">
-                  <button
-                    onClick={() => router.push(`/dashboard/career/editor/${activeResume.id}`)}
-                    className="btn-primary"
-                  >
-                    <Wand2 className="size-4" /> Full Split Screen Workspace
+                {/* Bottom actions */}
+                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                  <button onClick={() => router.push(`/dashboard/career/editor/${activeResume.id}`)} style={btnPrimary}>
+                    <Wand2 size={16} /> Full Split Screen Workspace
                   </button>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => router.push(`/dashboard/career/preview/${activeResume.id}`)}
-                      className="btn-secondary py-2"
-                    >
-                      <Eye className="size-4" /> Preview
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => router.push(`/dashboard/career/preview/${activeResume.id}`)} style={btnSecondary}>
+                      <Eye size={16} /> Preview
                     </button>
-                    <button 
-                      onClick={() => window.print()}
-                      className="btn-secondary py-2"
-                    >
-                      <Printer className="size-4" /> Export PDF
+                    <button onClick={() => window.print()} style={btnSecondary}>
+                      <Printer size={16} /> Export PDF
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* TAB CONTENT: AI OPTIMIZE */}
+            {/* ─── TAB: AI OPTIMIZE ─── */}
             {activeTab === "optimize" && (
-              <div className="glass p-6 rounded-2xl space-y-6">
-                <div className="space-y-2">
-                  <h2 className="text-lg font-bold text-foreground">AI-Powered Resume Optimization</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Align your achievements and technical competencies with the target role. Our AI engine writes quantitative STAR bullet outcomes and structures terminology dynamically.
-                  </p>
-                </div>
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg, marginBottom: 4 }}>AI-Powered Resume Optimization</h2>
+                <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 20 }}>
+                  Align your achievements and technical competencies with the target role. Our AI engine writes quantitative STAR bullet outcomes.
+                </p>
 
-                <div className="flex flex-col md:flex-row items-end gap-4 p-4 rounded-xl bg-secondary border border-border">
-                  <div className="flex-1 space-y-1.5 w-full">
-                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Target Alignment Profile</label>
-                    <select
-                      value={selectedRole}
-                      onChange={(e) => setSelectedRole(e.target.value)}
-                      className="input w-full bg-card"
-                    >
-                      {TARGET_ROLES.map(role => (
-                        <option key={role} value={role}>{role}</option>
-                      ))}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end", padding: 16, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, marginBottom: 20 }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <label style={labelStyle}>Target Alignment Profile</label>
+                    <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} style={{ ...inputStyle, background: T.cardBg }}>
+                      {TARGET_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
                     </select>
                   </div>
-
-                  <button
-                    onClick={handleOptimizeResume}
-                    disabled={optimizing}
-                    className="btn-primary h-11 px-6 w-full md:w-auto shrink-0 justify-center"
-                  >
-                    {optimizing ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        <span>Rebuilding outline...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="size-4" />
-                        <span>🪄 Optimize Content</span>
-                      </>
-                    )}
+                  <button onClick={handleOptimizeResume} disabled={optimizing} style={{ ...btnPrimary, height: 44, justifyContent: "center", minWidth: 180 }}>
+                    {optimizing ? <><Loader2 size={16} className="animate-spin" /> Rebuilding outline...</> : <><Sparkles size={16} /> 🪄 Optimize Content</>}
                   </button>
                 </div>
 
                 {optimizing && (
-                  <div className="flex flex-col items-center justify-center p-12 text-center space-y-4">
-                    <div className="w-12 h-12 rounded-2xl hero-gradient text-white flex items-center justify-center animate-pulse shadow-lg glow">
-                      <Wand2 className="size-6 text-foreground" />
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center" }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg, #6366F1, #8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: T.shadowGlow, marginBottom: 16 }}>
+                      <Wand2 size={24} color="#FFFFFF" />
                     </div>
-                    <div>
-                      <div className="font-semibold text-foreground">Synthesizing STAR Bullets</div>
-                      <p className="text-xs text-muted-foreground mt-1">Creating a cloud snapshot for rolling back anytime.</p>
-                    </div>
+                    <div style={{ fontWeight: 600, color: T.fg }}>Synthesizing STAR Bullets</div>
+                    <p style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>Creating a cloud snapshot for rolling back anytime.</p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB CONTENT: ATS SCANNER */}
+            {/* ─── TAB: ATS SCAN ─── */}
             {activeTab === "ats" && (
-              <div className="glass p-6 rounded-2xl space-y-6">
-                <div className="space-y-2">
-                  <h2 className="text-lg font-bold text-foreground">ATS Score & Gap Analyzer</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Check alignment index with target roles. Map technical keywords, identify missing section nodes, and bypass robotic filters automatically.
-                  </p>
-                </div>
+              <div style={cardStyle}>
+                <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg, marginBottom: 4 }}>ATS Score & Gap Analyzer</h2>
+                <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 20 }}>
+                  Check alignment with target roles. Map keywords, identify missing sections, and bypass robotic filters.
+                </p>
 
-                <div className="flex flex-col md:flex-row items-end gap-4 p-4 rounded-xl bg-secondary border border-border">
-                  <div className="flex-1 space-y-1.5 w-full">
-                    <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Target Alignment Profile</label>
-                    <select
-                      value={selectedRole}
-                      onChange={(e) => setSelectedRole(e.target.value)}
-                      className="input w-full bg-card"
-                    >
-                      {TARGET_ROLES.map(role => (
-                        <option key={role} value={role}>{role}</option>
-                      ))}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-end", padding: 16, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, marginBottom: 20 }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <label style={labelStyle}>Target Alignment Profile</label>
+                    <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} style={{ ...inputStyle, background: T.cardBg }}>
+                      {TARGET_ROLES.map(role => <option key={role} value={role}>{role}</option>)}
                     </select>
                   </div>
-
-                  <button
-                    onClick={handleATSScan}
-                    disabled={scanning}
-                    className="btn-primary h-11 px-6 w-full md:w-auto shrink-0 justify-center"
-                  >
-                    {scanning ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        <span>Analyzing layout...</span>
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck className="size-4" />
-                        <span>Scan Compatibility</span>
-                      </>
-                    )}
+                  <button onClick={handleATSScan} disabled={scanning} style={{ ...btnPrimary, height: 44, justifyContent: "center", minWidth: 180 }}>
+                    {scanning ? <><Loader2 size={16} className="animate-spin" /> Analyzing layout...</> : <><ShieldCheck size={16} /> Scan Compatibility</>}
                   </button>
                 </div>
 
                 {scanning && (
-                  <div className="flex flex-col items-center justify-center p-12 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-                    <div className="font-semibold text-foreground">Scoring resume against target weights...</div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, textAlign: "center" }}>
+                    <div style={{ width: 48, height: 48, borderRadius: "50%", border: `4px solid ${T.primary}`, borderTopColor: "transparent", animation: "spin 0.8s linear infinite" }} />
+                    <div style={{ fontWeight: 600, color: T.fg, marginTop: 16 }}>Scoring resume against target weights...</div>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 )}
 
                 {atsReport && !scanning && (
-                  <div className="space-y-6 border-t border-border pt-6 animate-fade-in">
-                    {/* Ring score panel */}
-                    <div className="flex items-center gap-6 p-4 rounded-xl bg-secondary border border-border">
-                      <div className="relative size-20 flex items-center justify-center flex-shrink-0">
-                        {/* Custom radial indicator */}
-                        <svg width="80" height="80" viewBox="0 0 80 80" className="transform -rotate-90">
-                          <circle cx="40" cy="40" r="32" stroke="rgba(255,255,255,0.05)" strokeWidth="6" fill="none" />
-                          <circle 
-                            cx="40" 
-                            cy="40" 
-                            r="32" 
-                            stroke="var(--color-primary)" 
-                            strokeWidth="6" 
-                            fill="none"
+                  <div className="animate-fade-in" style={{ borderTop: `1px solid ${T.border}`, paddingTop: 24 }}>
+                    {/* Score ring */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 24, padding: 20, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, marginBottom: 20 }}>
+                      <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
+                        <svg width="80" height="80" viewBox="0 0 80 80" style={{ transform: "rotate(-90deg)" }}>
+                          <circle cx="40" cy="40" r="32" stroke={T.border} strokeWidth="6" fill="none" />
+                          <circle
+                            cx="40" cy="40" r="32"
+                            stroke={T.primary}
+                            strokeWidth="6" fill="none"
                             strokeDasharray={2 * Math.PI * 32}
                             strokeDashoffset={2 * Math.PI * 32 * (1 - atsReport.score / 100)}
                             strokeLinecap="round"
                             style={{ transition: "stroke-dashoffset 1s ease" }}
-                            className="glow"
                           />
                         </svg>
-                        <span className="absolute text-lg font-bold text-foreground">{atsReport.score}%</span>
+                        <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 700, color: T.fg }}>
+                          {atsReport.score}%
+                        </span>
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-foreground">Score Generated</h3>
-                        <p className="text-xs text-muted-foreground mt-1">Audit complete for role target: <strong className="text-foreground">{atsReport.target_role}</strong></p>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, color: T.fg }}>Score Generated</h3>
+                        <p style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                          Audit complete for role target: <strong style={{ color: T.fg }}>{atsReport.target_role}</strong>
+                        </p>
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {/* Matched */}
-                      <div className="p-4 rounded-xl bg-success/5 border border-success/20">
-                        <h4 className="text-xs font-bold text-success uppercase tracking-wider mb-3">✅ Matched Keywords</h4>
-                        <div className="flex flex-wrap gap-1.5">
+                    {/* Matched vs Missing */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+                      <div style={{ padding: 16, borderRadius: 12, background: T.successLight, border: `1px solid rgba(16,185,129,0.2)` }}>
+                        <h4 style={{ fontSize: 11, fontWeight: 700, color: T.success, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>✅ Matched Keywords</h4>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {atsReport.keyword_analysis?.matched?.map(k => (
-                            <span key={k} className="text-xs px-2 py-0.5 rounded bg-success/10 text-success border border-success/20">{k}</span>
-                          )) || <span className="text-xs text-muted-foreground">None detected</span>}
+                            <span key={k} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, background: "rgba(16,185,129,0.1)", color: T.success, border: "1px solid rgba(16,185,129,0.2)" }}>{k}</span>
+                          )) || <span style={{ fontSize: 12, color: T.muted }}>None detected</span>}
                         </div>
                       </div>
-
-                      {/* Missing */}
-                      <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
-                        <h4 className="text-xs font-bold text-destructive uppercase tracking-wider mb-3">❌ Missing Keywords</h4>
-                        <div className="flex flex-wrap gap-1.5">
+                      <div style={{ padding: 16, borderRadius: 12, background: T.destructiveLight, border: "1px solid rgba(239,68,68,0.2)" }}>
+                        <h4 style={{ fontSize: 11, fontWeight: 700, color: T.destructive, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>❌ Missing Keywords</h4>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {atsReport.keyword_analysis?.missing?.map(k => (
-                            <span key={k} className="text-xs px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">{k}</span>
-                          )) || <span className="text-xs text-muted-foreground">None detected</span>}
+                            <span key={k} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, background: "rgba(239,68,68,0.08)", color: T.destructive, border: "1px solid rgba(239,68,68,0.2)" }}>{k}</span>
+                          )) || <span style={{ fontSize: 12, color: T.muted }}>None detected</span>}
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-1">
-                        <span className="text-xs uppercase text-muted-foreground font-semibold">Weak Sections</span>
-                        <div className="p-4 rounded-xl bg-secondary border border-border text-sm leading-relaxed text-foreground">
+                    {/* Weak Sections + Relevance */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+                      <div>
+                        <span style={labelStyle}>Weak Sections</span>
+                        <div style={{ padding: 16, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, fontSize: 14, lineHeight: 1.6, color: T.fg }}>
                           {atsReport.weak_sections?.join(", ") || "No significant formatting bottlenecks."}
                         </div>
                       </div>
-
-                      <div className="space-y-1">
-                        <span className="text-xs uppercase text-muted-foreground font-semibold">Relevance Analysis</span>
-                        <div className="p-4 rounded-xl bg-secondary border border-border text-sm leading-relaxed text-foreground">
+                      <div>
+                        <span style={labelStyle}>Relevance Analysis</span>
+                        <div style={{ padding: 16, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, fontSize: 14, lineHeight: 1.6, color: T.fg }}>
                           {atsReport.relevance_analysis || "No alignment remarks."}
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <span className="text-xs uppercase text-muted-foreground font-semibold block">Tailored Action Recommendations</span>
-                      <ul className="space-y-2 bg-secondary border border-border p-4 rounded-xl text-sm leading-relaxed">
+                    {/* Suggestions */}
+                    <div>
+                      <span style={labelStyle}>Tailored Action Recommendations</span>
+                      <ul style={{ listStyle: "none", padding: 16, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                         {atsReport.suggestions?.map((item, idx) => (
-                          <li key={idx} className="flex gap-2.5 items-start">
-                            <Sparkles className="size-4 text-primary shrink-0 mt-0.5" />
+                          <li key={idx} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, lineHeight: 1.6, color: T.fg }}>
+                            <Sparkles size={16} color={T.primary} style={{ flexShrink: 0, marginTop: 3 }} />
                             <span>{item}</span>
                           </li>
-                        )) || <li className="text-muted-foreground text-xs">No pending recommendations.</li>}
+                        )) || <li style={{ fontSize: 12, color: T.muted }}>No pending recommendations.</li>}
                       </ul>
                     </div>
                   </div>
                 )}
 
                 {!atsReport && !scanning && (
-                  <div className="text-center p-8 text-muted-foreground text-sm">
+                  <div style={{ textAlign: "center", padding: 32, color: T.muted, fontSize: 14 }}>
                     Perform a gap analysis above to calculate ATS compatibility grades.
                   </div>
                 )}
               </div>
             )}
 
-            {/* TAB CONTENT: CERTIFICATIONS */}
+            {/* ─── TAB: CERTIFICATIONS ─── */}
             {activeTab === "certifications" && (
-              <div className="grid md:grid-cols-[1fr_1.2fr] gap-6">
-                {/* Left: upload dropzone and details */}
-                <div className="space-y-4">
+              <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 24 }}>
+                {/* Upload Side */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   {/* Dropzone */}
                   <div
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setCertFile(f); }}
-                    className="rounded-2xl glass p-6 border-2 border-dashed border-white/10 hover:border-primary/40 transition-colors text-center cursor-pointer"
                     onClick={() => document.getElementById("cert-upload-input")?.click()}
+                    style={{
+                      ...cardStyle,
+                      borderStyle: "dashed",
+                      borderWidth: 2,
+                      borderColor: T.border,
+                      textAlign: "center",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
                   >
-                    <div className="size-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center mx-auto mb-2"><Award className="size-6" /></div>
-                    <div className="font-semibold text-foreground">Drop a credential file</div>
-                    <p className="text-xs text-muted-foreground mt-1">PDFs and images. We'll link it to your vault.</p>
-                    {certFile && <div className="mt-3 text-xs text-primary font-semibold">📎 Selected: {certFile.name}</div>}
-                    <input 
-                      type="file" 
-                      id="cert-upload-input" 
-                      className="hidden" 
-                      onChange={(e) => setCertFile(e.target.files?.[0] || null)} 
-                    />
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: T.primaryLight, color: T.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                      <Award size={24} />
+                    </div>
+                    <div style={{ fontWeight: 600, color: T.fg }}>Drop a credential file</div>
+                    <p style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>PDFs and images. We'll link it to your vault.</p>
+                    {certFile && <div style={{ marginTop: 12, fontSize: 12, color: T.primary, fontWeight: 600 }}>📎 Selected: {certFile.name}</div>}
+                    <input type="file" id="cert-upload-input" style={{ display: "none" }} onChange={(e) => setCertFile(e.target.files?.[0] || null)} />
                   </div>
 
                   {/* Details Form */}
-                  <div className="glass p-5 rounded-2xl space-y-4">
-                    <h3 className="font-bold text-sm text-foreground">Extracted Metadata</h3>
-                    
-                    <div className="space-y-1">
-                      <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Title</label>
-                      <input 
-                        type="text" 
-                        value={certDetails.title}
-                        onChange={(e) => setCertDetails({...certDetails, title: e.target.value})}
-                        placeholder="e.g. AWS Solutions Architect"
-                        className="input"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Issuing Organization</label>
-                      <input 
-                        type="text" 
-                        value={certDetails.issuingOrganization}
-                        onChange={(e) => setCertDetails({...certDetails, issuingOrganization: e.target.value})}
-                        placeholder="e.g. Amazon Web Services"
-                        className="input"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Issue Date</label>
-                        <input 
-                          type="date" 
-                          value={certDetails.issueDate}
-                          onChange={(e) => setCertDetails({...certDetails, issueDate: e.target.value})}
-                          className="input"
-                        />
+                  <div style={cardStyle}>
+                    <h3 style={{ fontWeight: 700, fontSize: 14, color: T.fg, marginBottom: 16 }}>Extracted Metadata</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      <div>
+                        <label style={labelStyle}>Title</label>
+                        <input type="text" value={certDetails.title} onChange={(e) => setCertDetails({...certDetails, title: e.target.value})} placeholder="e.g. AWS Solutions Architect" style={inputStyle} />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Credential ID</label>
-                        <input 
-                          type="text" 
-                          value={certDetails.credentialId}
-                          onChange={(e) => setCertDetails({...certDetails, credentialId: e.target.value})}
-                          placeholder="ID"
-                          className="input"
-                        />
+                      <div>
+                        <label style={labelStyle}>Issuing Organization</label>
+                        <input type="text" value={certDetails.issuingOrganization} onChange={(e) => setCertDetails({...certDetails, issuingOrganization: e.target.value})} placeholder="e.g. Amazon Web Services" style={inputStyle} />
                       </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div>
+                          <label style={labelStyle}>Issue Date</label>
+                          <input type="date" value={certDetails.issueDate} onChange={(e) => setCertDetails({...certDetails, issueDate: e.target.value})} style={inputStyle} />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Credential ID</label>
+                          <input type="text" value={certDetails.credentialId} onChange={(e) => setCertDetails({...certDetails, credentialId: e.target.value})} placeholder="ID" style={inputStyle} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Credential URL</label>
+                        <input type="text" value={certDetails.credentialUrl} onChange={(e) => setCertDetails({...certDetails, credentialUrl: e.target.value})} placeholder="https://..." style={inputStyle} />
+                      </div>
+                      <button onClick={handleUploadCert} disabled={uploadingCert} style={{ ...btnPrimary, width: "100%", justifyContent: "center" }}>
+                        {uploadingCert ? "Saving..." : "Save to Vault"}
+                      </button>
                     </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Credential URL</label>
-                      <input 
-                        type="text" 
-                        value={certDetails.credentialUrl}
-                        onChange={(e) => setCertDetails({...certDetails, credentialUrl: e.target.value})}
-                        placeholder="https://..."
-                        className="input"
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleUploadCert}
-                      disabled={uploadingCert}
-                      className="btn-primary w-full justify-center"
-                    >
-                      {uploadingCert ? "Saving..." : "Save to Vault"}
-                    </button>
                   </div>
                 </div>
 
-                {/* Right: saved credentials */}
-                <div className="space-y-4">
-                  <h3 className="font-bold text-sm text-foreground">Your Credentials ({certifications.length})</h3>
+                {/* Saved Credentials */}
+                <div>
+                  <h3 style={{ fontWeight: 700, fontSize: 14, color: T.fg, marginBottom: 12 }}>Your Credentials ({certifications.length})</h3>
                   {certifications.length === 0 ? (
-                    <div className="glass p-8 rounded-2xl text-center text-muted-foreground text-sm">
+                    <div style={{ ...cardStyle, textAlign: "center", padding: 32, color: T.muted, fontSize: 14 }}>
                       No certifications uploaded to vault yet.
                     </div>
                   ) : (
-                    <div className="grid gap-3">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {certifications.map(cert => (
-                        <div key={cert.id} className="glass p-4 rounded-xl flex flex-col gap-3">
-                          <div className="flex gap-3">
-                            <div className="size-10 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
-                              <Award className="size-5" />
+                        <div key={cert.id} style={cardStyle}>
+                          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: 10, background: T.primaryLight, border: `1px solid ${T.primaryMedium}`, color: T.primary, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Award size={20} />
                             </div>
-                            <div className="min-w-0">
-                              <h4 className="font-semibold text-sm text-white truncate">{cert.title}</h4>
-                              <p className="text-xs text-muted-foreground truncate">{cert.issuing_organization} • {cert.issue_date || "Pending Date"}</p>
+                            <div style={{ minWidth: 0 }}>
+                              <h4 style={{ fontWeight: 600, fontSize: 14, color: T.fg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cert.title}</h4>
+                              <p style={{ fontSize: 12, color: T.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cert.issuing_organization} • {cert.issue_date || "Pending Date"}</p>
                             </div>
                           </div>
-
-                          <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-border">
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
                             {cert.file_url ? (
-                              <a 
-                                href={cert.file_url} 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-                              >
-                                <FileText className="size-3.5" /> View file
+                              <a href={cert.file_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: T.primary, fontWeight: 500, textDecoration: "none" }}>
+                                <FileText size={14} /> View file
                               </a>
                             ) : (
-                              <span className="text-xs text-muted-foreground">Vault storage linked</span>
+                              <span style={{ fontSize: 12, color: T.muted }}>Vault storage linked</span>
                             )}
-                            
                             <button
                               onClick={() => handlePublishCert(cert.id)}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0a66c2] text-white px-3 py-1.5 text-xs font-semibold hover:opacity-90 transition-opacity"
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 6,
+                                borderRadius: 8, background: "#0A66C2", color: "#FFFFFF",
+                                padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                                border: "none", cursor: "pointer", transition: "opacity 0.15s",
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.9"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
                             >
-                              <Linkedin className="size-3" /> Share to LinkedIn
+                              <Linkedin size={12} /> Share to LinkedIn
                             </button>
                           </div>
                         </div>
@@ -1039,40 +997,33 @@ export default function CareerDashboard() {
             )}
           </div>
 
-          {/* Sidebar widgets (Right side) */}
-          <aside className="space-y-6">
+          {/* ═══ SIDEBAR ═══ */}
+          <aside style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Resume Selector */}
             {resumes.length > 1 && (
-              <div className="glass p-5 rounded-2xl space-y-3">
-                <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">Active Resume</label>
+              <div style={cardStyle}>
+                <label style={labelStyle}>Active Resume</label>
                 <select
                   value={activeResume?.id || ""}
                   onChange={(e) => {
                     const found = resumes.find(r => r.id === e.target.value);
                     if (found) {
                       setActiveResume(found);
-                      setResumeDraft({ 
-                        title: found.title || "", 
-                        target_role: found.target_role || "", 
-                        summary: found.summary || "", 
-                        skills: found.skills || [] 
-                      });
+                      setResumeDraft({ title: found.title || "", target_role: found.target_role || "", summary: found.summary || "", skills: found.skills || [] });
                       fetchVersions(found.id);
                     }
                   }}
-                  className="input w-full bg-card"
+                  style={{ ...inputStyle, background: T.cardBg }}
                 >
-                  {resumes.map(r => (
-                    <option key={r.id} value={r.id}>{r.title}</option>
-                  ))}
+                  {resumes.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select>
               </div>
             )}
 
             {/* Template Chooser */}
-            <div className="glass p-5 rounded-2xl space-y-3">
-              <label className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block">A4 Layout Template</label>
-              <div className="grid grid-cols-2 gap-2">
+            <div style={cardStyle}>
+              <label style={labelStyle}>A4 Layout Template</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
                 {TEMPLATE_OPTIONS.map(tmpl => {
                   const isSelected = selectedTemplate === tmpl.id;
                   return (
@@ -1080,70 +1031,68 @@ export default function CareerDashboard() {
                       key={tmpl.id}
                       onClick={() => {
                         setSelectedTemplate(tmpl.id);
-                        if (activeResume) {
-                          api.updateResume(activeResume.id, { templateId: tmpl.id });
-                        }
+                        if (activeResume) api.updateResume(activeResume.id, { templateId: tmpl.id });
                       }}
-                      className={`p-3 rounded-xl border text-center transition-all duration-300 ${
-                        isSelected 
-                          ? "border-primary bg-primary/10 shadow-sm" 
-                          : "border-border bg-secondary/40 hover:bg-secondary/60 hover:border-white/10"
-                      }`}
+                      style={{
+                        padding: 12, borderRadius: 10, textAlign: "center",
+                        border: isSelected ? `2px solid ${T.primary}` : `1px solid ${T.border}`,
+                        background: isSelected ? T.primaryLight : T.secondary,
+                        cursor: "pointer", transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.background = "#E5E7EB"; e.currentTarget.style.borderColor = T.mutedLight; }}}
+                      onMouseLeave={(e) => { if (!isSelected) { e.currentTarget.style.background = T.secondary; e.currentTarget.style.borderColor = T.border; }}}
                     >
-                      <div className="text-xl mb-1">{tmpl.emoji}</div>
-                      <div className={`text-xs font-bold ${isSelected ? "text-primary" : "text-foreground"}`}>{tmpl.label}</div>
-                      <div className="text-[9px] text-muted-foreground mt-0.5 truncate">{tmpl.desc}</div>
+                      <div style={{ fontSize: 20, marginBottom: 4 }}>{tmpl.emoji}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: isSelected ? T.primary : T.fg }}>{tmpl.label}</div>
+                      <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>{tmpl.desc}</div>
                     </button>
                   );
                 })}
               </div>
               <button
                 onClick={() => router.push(`/dashboard/career/preview/${activeResume.id}`)}
-                className="btn-primary w-full justify-center text-xs py-2 mt-2"
+                style={{ ...btnPrimary, width: "100%", justifyContent: "center", fontSize: 12, padding: "8px 16px" }}
               >
-                <Eye className="size-3.5" /> Full Printable Preview
+                <Eye size={14} /> Full Printable Preview
               </button>
             </div>
 
-            {/* Profile Completion Card */}
-            <div className="glass p-5 rounded-2xl space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Profile Strength</span>
-                <span className="text-xs font-bold text-primary">{getProfileCompletion()}%</span>
+            {/* Profile Completion */}
+            <div style={cardStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, color: T.muted }}>Profile Strength</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.primary }}>{getProfileCompletion()}%</span>
               </div>
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className="h-full hero-gradient transition-all duration-500" 
-                  style={{ width: `${getProfileCompletion()}%` }}
-                />
+              <div style={{ height: 8, background: T.secondary, borderRadius: 9999, overflow: "hidden", marginBottom: 10 }}>
+                <div style={{ height: "100%", background: "linear-gradient(135deg, #6366F1, #8B5CF6, #A78BFA)", transition: "width 0.5s ease", width: `${getProfileCompletion()}%`, borderRadius: 9999 }} />
               </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Add skills, certifications, and educational backgrounds to hit 100% and optimize ATS matching filters.
+              <p style={{ fontSize: 11, color: T.muted, lineHeight: 1.5 }}>
+                Add skills, certifications, and education to hit 100% and optimize ATS matching.
               </p>
             </div>
 
-            {/* Version Snapshot list */}
+            {/* Version History */}
             {versions.length > 0 && (
-              <div className="glass p-5 rounded-2xl space-y-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <History className="size-4 text-primary" /> Version History
+              <div style={cardStyle}>
+                <h3 style={{ fontSize: 14, fontWeight: 700, color: T.fg, display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+                  <History size={16} color={T.primary} /> Version History
                 </h3>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                <div style={{ maxHeight: 192, overflowY: "auto", paddingRight: 4 }}>
                   {versions.map(v => (
-                    <div key={v.id} className="flex justify-between items-center py-2 border-b border-border last:border-0 text-xs">
+                    <div key={v.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: `1px solid ${T.borderSubtle}`, fontSize: 12 }}>
                       <div>
-                        <div className="font-semibold text-foreground">v{v.version}</div>
-                        <div className="text-[10px] text-muted-foreground">{new Date(v.created_at).toLocaleDateString()}</div>
+                        <div style={{ fontWeight: 600, color: T.fg }}>v{v.version}</div>
+                        <div style={{ fontSize: 10, color: T.muted }}>{new Date(v.created_at).toLocaleDateString()}</div>
                       </div>
-
-                      <button 
+                      <button
                         onClick={() => handleRollback(v.version)}
                         disabled={v.version === activeResume.version}
-                        className={`font-semibold transition-colors ${
-                          v.version === activeResume.version 
-                            ? "text-success cursor-default" 
-                            : "text-primary hover:text-primary-foreground"
-                        }`}
+                        style={{
+                          background: "none", border: "none", cursor: v.version === activeResume.version ? "default" : "pointer",
+                          fontWeight: 600, fontSize: 12,
+                          color: v.version === activeResume.version ? T.success : T.primary,
+                          transition: "color 0.15s",
+                        }}
                       >
                         {v.version === activeResume.version ? "Active" : "Restore"}
                       </button>
@@ -1155,244 +1104,211 @@ export default function CareerDashboard() {
           </aside>
         </div>
       ) : (
-        /* Empty Draft State */
-        <div className="glass border border-white/10 glow p-12 rounded-3xl text-center max-w-lg mx-auto space-y-6">
-          <div className="size-16 rounded-2xl hero-gradient text-white flex items-center justify-center mx-auto shadow-lg glow">
-            <Award className="size-8 text-foreground" />
+        /* ═══ EMPTY STATE ═══ */
+        <div style={{
+          ...cardStyle,
+          maxWidth: 520, margin: "0 auto",
+          textAlign: "center", padding: 48,
+          borderRadius: T.radiusXl,
+          boxShadow: T.shadowGlow,
+        }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 16,
+            background: "linear-gradient(135deg, #6366F1, #8B5CF6, #A78BFA)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 20px",
+            boxShadow: T.shadowGlow,
+          }}>
+            <Award size={32} color="#FFFFFF" />
           </div>
-          
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold text-foreground">No Resume Active</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Import details from your LinkedIn profile export or paste previous CV content. Our AI automatically extracts certifications and formats clean STAR accomplishments.
-            </p>
-          </div>
-
-          <div className="flex gap-3 justify-center">
-            <button 
-              onClick={() => setShowSyncModal(true)}
-              className="btn-primary"
-            >
-              <Linkedin className="size-4" /> Import LinkedIn / CV
+          <h3 style={{ fontSize: 20, fontWeight: 700, color: T.fg, marginBottom: 8 }}>No Resume Active</h3>
+          <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 24 }}>
+            Import details from your LinkedIn profile export or paste previous CV content. Our AI automatically extracts certifications and formats clean STAR accomplishments.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <button onClick={() => setShowSyncModal(true)} style={btnPrimary}>
+              <Linkedin size={16} /> Import LinkedIn / CV
             </button>
-            <button 
-              onClick={handleCreateManualResume}
-              className="btn-secondary"
-            >
-              <Plus className="size-4" /> Create Manually
+            <button onClick={handleCreateManualResume} style={btnSecondary}>
+              <Plus size={16} /> Create Manually
             </button>
           </div>
         </div>
       )}
 
-      {/* Import & Parse Multi-Source Overlay Modal */}
+      {/* ═══ IMPORT MODAL ═══ */}
       {showSyncModal && (
-        <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4"
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(15,23,42,0.4)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            zIndex: 50,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16,
+          }}
           onClick={() => !parsingProfile && setShowSyncModal(false)}
         >
-          <div 
-            className="w-full max-w-3xl rounded-3xl bg-white border border-gray-200 shadow-xl p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto scrollbar"
+          <div
+            style={{
+              width: "100%", maxWidth: 720,
+              borderRadius: T.radiusXl,
+              background: T.cardBg,
+              border: `1px solid ${T.border}`,
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)",
+              padding: 32,
+              maxHeight: "90vh", overflowY: "auto",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex justify-between items-start border-b border-gray-100 pb-4">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: `1px solid ${T.borderSubtle}`, paddingBottom: 16, marginBottom: 24 }}>
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Sync & Merge History</h2>
-                <p className="text-sm text-slate-500 mt-1">
-                  Synthesize achievements from LinkedIn exports and old resume docs.
-                </p>
+                <h2 style={{ fontSize: 22, fontWeight: 800, color: T.fg }}>Sync & Merge History</h2>
+                <p style={{ fontSize: 14, color: T.muted, marginTop: 4 }}>Synthesize achievements from LinkedIn exports and old resume docs.</p>
               </div>
               {!parsingProfile && (
                 <button
                   onClick={() => setShowSyncModal(false)}
-                  className="size-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-800 border border-gray-200"
+                  style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    background: T.secondary, border: `1px solid ${T.border}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: T.muted, cursor: "pointer", transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = T.fg; e.currentTarget.style.background = "#E5E7EB"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = T.muted; e.currentTarget.style.background = T.secondary; }}
                 >
-                  <X className="size-4" />
+                  <X size={16} />
                 </button>
               )}
             </div>
 
-            <form onSubmit={handleProfileParseSubmit} className="space-y-6">
-              {/* Dual upload panels */}
-              <div className="grid md:grid-cols-2 gap-4">
-                {/* LinkedIn DropZone */}
-                <div className="space-y-2">
-                  <label className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Source 1: LinkedIn Profile PDF</label>
+            <form onSubmit={handleProfileParseSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                {/* LinkedIn Panel */}
+                <div>
+                  <label style={labelStyle}>Source 1: LinkedIn Profile PDF</label>
                   <div
-                    onDragEnter={handleDragLinkedin}
-                    onDragOver={handleDragLinkedin}
-                    onDragLeave={handleDragLinkedin}
-                    onDrop={handleDropLinkedin}
+                    onDragEnter={handleDragLinkedin} onDragOver={handleDragLinkedin} onDragLeave={handleDragLinkedin} onDrop={handleDropLinkedin}
                     onClick={() => !parsingProfile && !linkedinFile && linkedinInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 ${
-                      dragActiveLinkedin 
-                        ? "border-primary bg-primary/10" 
-                        : "border-gray-200 bg-slate-50 hover:border-primary/40 hover:bg-slate-100"
-                    }`}
+                    style={{
+                      border: `2px dashed ${dragActiveLinkedin ? T.primary : T.border}`,
+                      borderRadius: T.radiusLg, padding: 24, textAlign: "center", cursor: "pointer",
+                      background: dragActiveLinkedin ? T.primaryLight : T.secondary,
+                      transition: "all 0.25s ease",
+                    }}
                   >
-                    <input
-                      ref={linkedinInputRef}
-                      type="file"
-                      accept=".pdf"
-                      onChange={handleFileChangeLinkedin}
-                      disabled={parsingProfile || !!linkedinFile}
-                      className="hidden"
-                    />
-
+                    <input ref={linkedinInputRef} type="file" accept=".pdf" onChange={handleFileChangeLinkedin} disabled={parsingProfile || !!linkedinFile} style={{ display: "none" }} />
                     {linkedinFile ? (
-                      <div className="space-y-2">
-                        <FileText className="size-8 text-primary mx-auto" />
-                        <h4 className="text-xs font-semibold text-slate-800 truncate max-w-full px-2">{linkedinFile.name}</h4>
-                        <span className="text-[10px] text-slate-500">{(linkedinFile.size / 1024).toFixed(1)} KB</span>
-                        <button
-                          type="button"
-                          disabled={parsingProfile}
-                          onClick={(e) => { e.stopPropagation(); setLinkedinFile(null); }}
-                          className="block mx-auto text-[10px] text-destructive hover:underline font-bold"
-                        >
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                        <FileText size={32} color={T.primary} />
+                        <h4 style={{ fontSize: 12, fontWeight: 600, color: T.fg }}>{linkedinFile.name}</h4>
+                        <span style={{ fontSize: 10, color: T.muted }}>{(linkedinFile.size / 1024).toFixed(1)} KB</span>
+                        <button type="button" disabled={parsingProfile} onClick={(e) => { e.stopPropagation(); setLinkedinFile(null); }}
+                          style={{ fontSize: 10, color: T.destructive, fontWeight: 700, background: "none", border: "none", cursor: "pointer" }}>
                           Remove File
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <Upload className="size-8 text-slate-400 mx-auto" />
-                        <div className="text-xs font-semibold text-slate-700">Drag LinkedIn PDF Here</div>
-                        <p className="text-[10px] text-slate-500">Click to browse local files</p>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                        <Upload size={32} color={T.mutedLight} />
+                        <div style={{ fontSize: 12, fontWeight: 600, color: T.fgSecondary }}>Drag LinkedIn PDF Here</div>
+                        <p style={{ fontSize: 10, color: T.muted }}>Click to browse local files</p>
                       </div>
                     )}
                   </div>
-
                   {!linkedinFile && (
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowPasteLinkedin(!showPasteLinkedin)}
-                        className="text-xs font-semibold text-primary hover:underline"
-                      >
+                    <div style={{ marginTop: 6 }}>
+                      <button type="button" onClick={() => setShowPasteLinkedin(!showPasteLinkedin)}
+                        style={{ fontSize: 12, fontWeight: 600, color: T.primary, background: "none", border: "none", cursor: "pointer" }}>
                         {showPasteLinkedin ? "▼ Hide Paste Text Area" : "▶ Or paste raw LinkedIn profile text instead"}
                       </button>
-
                       {showPasteLinkedin && (
-                        <textarea
-                          value={linkedinText}
-                          onChange={(e) => setLinkedinText(e.target.value)}
-                          placeholder="Paste raw clipboard exports from your LinkedIn profile page..."
-                          rows={4}
-                          disabled={parsingProfile}
-                          className="input mt-2 bg-white leading-relaxed text-xs text-slate-800 border-gray-200"
-                        />
+                        <textarea value={linkedinText} onChange={(e) => setLinkedinText(e.target.value)}
+                          placeholder="Paste raw clipboard exports..." rows={4} disabled={parsingProfile}
+                          style={{ ...inputStyle, marginTop: 8, fontSize: 12, lineHeight: 1.7, resize: "none" }} />
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* CV DropZone */}
-                <div className="space-y-2">
-                  <label className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">Source 2: Existing CV / Resume Document</label>
+                {/* CV Panel */}
+                <div>
+                  <label style={labelStyle}>Source 2: Existing CV / Resume Document</label>
                   <div
-                    onDragEnter={handleDragCv}
-                    onDragOver={handleDragCv}
-                    onDragLeave={handleDragCv}
-                    onDrop={handleDropCv}
+                    onDragEnter={handleDragCv} onDragOver={handleDragCv} onDragLeave={handleDragCv} onDrop={handleDropCv}
                     onClick={() => !parsingProfile && !cvFile && cvInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 ${
-                      dragActiveCv 
-                        ? "border-primary bg-primary/10" 
-                        : "border-gray-200 bg-slate-50 hover:border-primary/40 hover:bg-slate-100"
-                    }`}
+                    style={{
+                      border: `2px dashed ${dragActiveCv ? T.primary : T.border}`,
+                      borderRadius: T.radiusLg, padding: 24, textAlign: "center", cursor: "pointer",
+                      background: dragActiveCv ? T.primaryLight : T.secondary,
+                      transition: "all 0.25s ease",
+                    }}
                   >
-                    <input
-                      ref={cvInputRef}
-                      type="file"
-                      accept=".pdf"
-                      onChange={handleFileChangeCv}
-                      disabled={parsingProfile || !!cvFile}
-                      className="hidden"
-                    />
-
+                    <input ref={cvInputRef} type="file" accept=".pdf" onChange={handleFileChangeCv} disabled={parsingProfile || !!cvFile} style={{ display: "none" }} />
                     {cvFile ? (
-                      <div className="space-y-2">
-                        <FileText className="size-8 text-primary mx-auto" />
-                        <h4 className="text-xs font-semibold text-slate-800 truncate max-w-full px-2">{cvFile.name}</h4>
-                        <span className="text-[10px] text-slate-500">{(cvFile.size / 1024).toFixed(1)} KB</span>
-                        <button
-                          type="button"
-                          disabled={parsingProfile}
-                          onClick={(e) => { e.stopPropagation(); setCvFile(null); }}
-                          className="block mx-auto text-[10px] text-destructive hover:underline font-bold"
-                        >
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                        <FileText size={32} color={T.primary} />
+                        <h4 style={{ fontSize: 12, fontWeight: 600, color: T.fg }}>{cvFile.name}</h4>
+                        <span style={{ fontSize: 10, color: T.muted }}>{(cvFile.size / 1024).toFixed(1)} KB</span>
+                        <button type="button" disabled={parsingProfile} onClick={(e) => { e.stopPropagation(); setCvFile(null); }}
+                          style={{ fontSize: 10, color: T.destructive, fontWeight: 700, background: "none", border: "none", cursor: "pointer" }}>
                           Remove File
                         </button>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        <Upload className="size-8 text-slate-400 mx-auto" />
-                        <div className="text-xs font-semibold text-slate-700">Drag CV PDF Here</div>
-                        <p className="text-[10px] text-slate-500">Click to browse local files</p>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                        <Upload size={32} color={T.mutedLight} />
+                        <div style={{ fontSize: 12, fontWeight: 600, color: T.fgSecondary }}>Drag CV PDF Here</div>
+                        <p style={{ fontSize: 10, color: T.muted }}>Click to browse local files</p>
                       </div>
                     )}
                   </div>
-
                   {!cvFile && (
-                    <div className="pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowPasteCv(!showPasteCv)}
-                        className="text-xs font-semibold text-primary hover:underline"
-                      >
+                    <div style={{ marginTop: 6 }}>
+                      <button type="button" onClick={() => setShowPasteCv(!showPasteCv)}
+                        style={{ fontSize: 12, fontWeight: 600, color: T.primary, background: "none", border: "none", cursor: "pointer" }}>
                         {showPasteCv ? "▼ Hide Paste Text Area" : "▶ Or paste raw CV resume text instead"}
                       </button>
-
                       {showPasteCv && (
-                        <textarea
-                          value={cvText}
-                          onChange={(e) => setCvText(e.target.value)}
-                          placeholder="Paste raw clipboard exports from your previous CV document..."
-                          rows={4}
-                          disabled={parsingProfile}
-                          className="input mt-2 bg-white leading-relaxed text-xs text-slate-800 border-gray-200"
-                        />
+                        <textarea value={cvText} onChange={(e) => setCvText(e.target.value)}
+                          placeholder="Paste raw clipboard exports..." rows={4} disabled={parsingProfile}
+                          style={{ ...inputStyle, marginTop: 8, fontSize: 12, lineHeight: 1.7, resize: "none" }} />
                       )}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Sync error display */}
+              {/* Error */}
               {syncError && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs flex gap-2">
-                  <AlertTriangle className="size-4 shrink-0" />
+                <div style={{ padding: 12, borderRadius: 10, background: T.destructiveLight, border: "1px solid rgba(239,68,68,0.2)", color: T.destructive, fontSize: 12, display: "flex", gap: 8, alignItems: "center" }}>
+                  <AlertTriangle size={16} style={{ flexShrink: 0 }} />
                   <span>{syncError}</span>
                 </div>
               )}
 
-              {/* Footer actions */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t border-gray-100">
-                <div className="text-xs text-slate-500 text-center sm:text-left">
+              {/* Footer */}
+              <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 16, paddingTop: 16, borderTop: `1px solid ${T.borderSubtle}` }}>
+                <div style={{ fontSize: 12, color: T.muted }}>
                   {parsingProfile ? (
-                    <span className="flex items-center gap-1.5 text-primary font-semibold">
-                      <Loader2 className="size-3.5 animate-spin" /> Merging achievements with AI nodes...
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, color: T.primary, fontWeight: 600 }}>
+                      <Loader2 size={14} className="animate-spin" /> Merging achievements with AI nodes...
                     </span>
                   ) : (
                     <span>Provide documents to synthesize full professional histories.</span>
                   )}
                 </div>
-
-                <div className="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+                <div style={{ display: "flex", gap: 8 }}>
                   {!parsingProfile && (
-                    <button
-                      type="button"
-                      onClick={() => setShowSyncModal(false)}
-                      className="btn-secondary"
-                    >
-                      Cancel
-                    </button>
+                    <button type="button" onClick={() => setShowSyncModal(false)} style={btnSecondary}>Cancel</button>
                   )}
                   <button
                     type="submit"
                     disabled={parsingProfile || (!linkedinFile && !linkedinText.trim() && !cvFile && !cvText.trim())}
-                    className="btn-primary"
+                    style={btnPrimary}
                   >
                     {parsingProfile ? "Synthesizing..." : "Merge & Synthesize Sources"}
                   </button>
