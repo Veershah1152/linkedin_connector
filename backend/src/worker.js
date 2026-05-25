@@ -34,7 +34,9 @@ app.use('*', cors({
     if (origin === clientUrl || 
         origin === 'http://localhost:3000' || 
         origin === 'https://linkedin-connector-frontend.pages.dev' ||
-        origin.endsWith('.linkedin-connector-frontend.pages.dev')) {
+        origin.endsWith('.linkedin-connector-frontend.pages.dev') ||
+        origin === 'https://linkmanager.dpdns.org' ||
+        origin.endsWith('.dpdns.org')) {
       return origin;
     }
     return clientUrl;
