@@ -33,6 +33,7 @@ app.use('*', cors({
     if (!origin) return clientUrl;
     if (origin === clientUrl || 
         origin === 'http://localhost:3000' || 
+        origin === 'https://linkedin-connector-frontend.pages.dev' ||
         origin.endsWith('.linkedin-connector-frontend.pages.dev')) {
       return origin;
     }
