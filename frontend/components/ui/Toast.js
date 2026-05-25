@@ -2,6 +2,54 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 
+// Intercept all fetch requests globally to inject Authorization headers for mobile/cross-domain support
+if (typeof window !== "undefined" && !window.__fetchIntercepted) {
+  window.__fetchIntercepted = true;
+  const originalFetch = window.fetch;
+  window.fetch = function (resource, config = {}) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    
+    // Check if the request is going to our API
+    let urlStr = "";
+    if (typeof resource === "string") {
+      urlStr = resource;
+    } else if (resource && typeof resource === "object" && resource.url) {
+      urlStr = resource.url;
+    } else if (resource && typeof resource.toString === "function") {
+      urlStr = resource.toString();
+    }
+    
+    const isApiRequest = urlStr.startsWith(apiUrl) || 
+                         urlStr.includes("linkedin-connector-backend.veershah1152.workers.dev") ||
+                         urlStr.includes("localhost:5000");
+    
+    if (isApiRequest) {
+      config.headers = config.headers || {};
+      
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        if (config.headers instanceof Headers) {
+          if (!config.headers.has("Authorization")) {
+            config.headers.set("Authorization", `Bearer ${token}`);
+          }
+        } else if (Array.isArray(config.headers)) {
+          const hasAuth = config.headers.some(([key]) => key.toLowerCase() === "authorization");
+          if (!hasAuth) {
+            config.headers.push(["Authorization", `Bearer ${token}`]);
+          }
+        } else {
+          if (!config.headers["Authorization"] && !config.headers["authorization"]) {
+            config.headers["Authorization"] = `Bearer ${token}`;
+          }
+        }
+      }
+      config.credentials = config.credentials || "include";
+    }
+    
+    return originalFetch.call(this, resource, config);
+  };
+}
+
 const ToastContext = createContext(null);
 
 /**
