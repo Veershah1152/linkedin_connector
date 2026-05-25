@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 import ModernTemplate from "@/components/resume-templates/ModernTemplate";
 import ClassicTemplate from "@/components/resume-templates/ClassicTemplate";
 import MinimalTemplate from "@/components/resume-templates/MinimalTemplate";
@@ -38,20 +39,22 @@ const TEMPLATES = [
   }
 ];
 
-export default function ResumePreviewPage() {
-  const params = useParams();
+function ResumePreviewContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const toast = useToast();
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
   const [saving, setSaving] = useState(false);
   const printRef = useRef(null);
+  const id = searchParams.get("id");
 
   useEffect(() => {
-    if (params?.id) {
-      fetchResume(params.id);
+    if (id) {
+      fetchResume(id);
     }
-  }, [params?.id]);
+  }, [id]);
 
   const fetchResume = async (id) => {
     try {
@@ -76,10 +79,11 @@ export default function ResumePreviewPage() {
     try {
       await api.updateResume(resume.id, { templateId: selectedTemplate });
       setSaving(false);
-      alert("Template preference saved!");
+      toast("Template preference saved!", "success");
     } catch (err) {
       console.error("Error saving template:", err);
       setSaving(false);
+      toast("Failed to save template choice", "error");
     }
   };
 
@@ -230,7 +234,7 @@ export default function ResumePreviewPage() {
           {/* Actions */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
             <button
-              onClick={() => router.push(`/dashboard/career/editor/${resume.id}`)}
+              onClick={() => router.push(`/dashboard/career/editor?id=${resume.id}`)}
               className="btn-secondary"
               style={{ width: "100%", justifyContent: "center" }}
             >
@@ -279,5 +283,20 @@ export default function ResumePreviewPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function ResumePreviewPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#F8F9FC" }}>
+        <div style={{ textAlign: "center", color: "#6B7280" }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📄</div>
+          <p style={{ fontWeight: 600 }}>Loading resume preview...</p>
+        </div>
+      </div>
+    }>
+      <ResumePreviewContent />
+    </Suspense>
   );
 }

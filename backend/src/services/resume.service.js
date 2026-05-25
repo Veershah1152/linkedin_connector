@@ -3,9 +3,12 @@ const config = require('../config/env');
 const { supabaseAdmin } = require('../config/supabase');
 const { AppError } = require('../middleware/error');
 
-const groq = new Groq({
-  apiKey: config.groq.apiKey || process.env.GROQ_API_KEY || 'missing_api_key_set_in_env',
-});
+const getGroqClient = (env) => {
+  const dynamicConfig = config.getConfig(env);
+  return new Groq({
+    apiKey: dynamicConfig.groq.apiKey || 'missing_api_key_set_in_env',
+  });
+};
 
 // Helper to clean up Markdown-wrapped JSON response from Groq
 const cleanAndParseJSON = (text) => {
@@ -253,7 +256,7 @@ const rollbackToVersion = async (userId, resumeId, versionNumber) => {
 /**
  * Optimize a resume for a target job role using Grok AI
  */
-const optimizeResume = async (userId, resumeId, targetRole) => {
+const optimizeResume = async (userId, resumeId, targetRole, env) => {
   const resume = await getResumeById(userId, resumeId);
 
   const systemPrompt = `You are a world-class Executive Resume Writer and FAANG technical recruiter.
@@ -303,6 +306,7 @@ Work Experience: ${JSON.stringify(resume.work_experience)}
 Projects: ${JSON.stringify(resume.projects)}`;
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [

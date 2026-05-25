@@ -18,7 +18,10 @@ const careerRoutes = require('./routes/career.routes');
 const app = express();
 
 // Initialize cron service for scheduling
-require('./services/cron.service');
+const cron = require('node-cron');
+const { runScheduledTasks } = require('./services/cron.service');
+cron.schedule('* * * * *', runScheduledTasks);
+console.log('⏰ Scheduled posts cron service initialized locally (runs every minute).');
 
 // ========================
 // Global Middleware

@@ -7,6 +7,8 @@ import {
   LineChart, Briefcase, Bell, Search, Plus, Zap,
   ChevronLeft, ChevronRight, LogOut, Menu, X
 } from "lucide-react";
+import { api } from "../../lib/api";
+
 
 const NAV_ITEMS = [
   { href: "/dashboard",           label: "Overview",       icon: LayoutDashboard, exact: true },
@@ -44,8 +46,42 @@ export default function DashboardLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
 
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch (e) {
+      console.error(e);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      window.location.href = "/login";
+    }
+  };
+
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlAccessToken = params.get("accessToken");
+      const urlRefreshToken = params.get("refreshToken");
+
+      if (urlAccessToken && urlRefreshToken) {
+        localStorage.setItem("accessToken", urlAccessToken);
+        localStorage.setItem("refreshToken", urlRefreshToken);
+
+        const cleanUrl = window.location.pathname + (window.location.hash || "");
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const headers = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, {
+      headers,
       credentials: "include",
     })
       .then((r) => r.json())
@@ -196,13 +232,13 @@ export default function DashboardLayout({ children }) {
               </div>
             )}
             {sidebarOpen && (
-              <a href="http://localhost:5000/api/auth/logout" title="Sign out"
-                style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: C.mutedFg, transition: "all 0.15s ease", flexShrink: 0 }}
+              <button onClick={handleLogout} title="Sign out"
+                style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: C.mutedFg, transition: "all 0.15s ease", flexShrink: 0, border: "none", background: "transparent", cursor: "pointer" }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "#FEF2F2"; e.currentTarget.style.color = "#EF4444"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.mutedFg; }}
               >
                 <LogOut size={14} />
-              </a>
+              </button>
             )}
           </div>
         </div>

@@ -1,11 +1,10 @@
-const cron = require('node-cron');
 const { supabaseAdmin } = require('../config/supabase');
 const postService = require('./post.service');
 
 /**
- * Scheduled task that runs every minute to process scheduled posts
+ * Scheduled task that runs to process scheduled posts
  */
-cron.schedule('* * * * *', async () => {
+const runScheduledTasks = async () => {
   console.log('⏰ Checking for scheduled posts to publish...');
   try {
     const now = new Date().toISOString();
@@ -49,6 +48,6 @@ cron.schedule('* * * * *', async () => {
   } catch (err) {
     console.error('Unhandled error in scheduled posts cron:', err);
   }
-});
+};
 
-console.log('⏰ Scheduled posts cron service initialized (runs every minute).');
+module.exports = { runScheduledTasks };

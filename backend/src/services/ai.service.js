@@ -1,12 +1,20 @@
 const Groq = require('groq-sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../config/env');
 const { supabaseAdmin } = require('../config/supabase');
 const { AppError } = require('../middleware/error');
 
-// Initialize Groq client
-const groq = new Groq({
-  apiKey: config.groq.apiKey || process.env.GROQ_API_KEY || 'missing_api_key_set_in_env',
-});
+const getGroqClient = (env) => {
+  const dynamicConfig = config.getConfig(env);
+  return new Groq({
+    apiKey: dynamicConfig.groq.apiKey || 'missing_api_key_set_in_env',
+  });
+};
+
+const getGeminiClient = (env) => {
+  const dynamicConfig = config.getConfig(env);
+  return new GoogleGenerativeAI(dynamicConfig.gemini.apiKey || 'missing_api_key_set_in_env');
+};
 
 // Helper to clean up Markdown-wrapped JSON response from Groq
 const cleanAndParseJSON = (text) => {
@@ -82,7 +90,7 @@ Looking forward to applying these skills in future collaborations and projects!
 /**
  * Generate a LinkedIn post using Groq AI
  */
-const generatePost = async (userId, options) => {
+const generatePost = async (userId, options, env) => {
   const {
     prompt,
     tone = 'professional',
@@ -133,6 +141,7 @@ ${STYLE_GUIDELINE}
 Return ONLY the JSON object. Do not include any extra text outside the JSON object.`;
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
@@ -171,7 +180,7 @@ Return ONLY the JSON object. Do not include any extra text outside the JSON obje
 /**
  * Analyze an image or PDF and generate a LinkedIn post
  */
-const analyzeImage = async (userId, file, options) => {
+const analyzeImage = async (userId, file, options, env) => {
   const {
     tone = 'professional',
     length = 'medium',
@@ -229,48 +238,37 @@ Return ONLY the JSON object. Do not include any extra text outside the JSON obje
 
     let extractedText = '';
 
+    const gemini = getGeminiClient(env);
+    const model = gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
     if (isPdf) {
-      // ── PDF via Local Extraction (pdf-parse) ───────────────────────────────
-      const pdfParse = require('pdf-parse');
-      const pdfData = await pdfParse(file.buffer);
-      extractedText = (pdfData.text || '').substring(0, 15000); // Allow more text
-      
-      // If it's a scanned PDF, pdf-parse will return empty or very little text.
-      // Fallback to OCR.Space for scanned PDFs.
-      if (extractedText.trim().length < 50) {
-        console.log('[AI] Scanned PDF detected. Falling back to OCR.Space...');
-        pdfFallbackUsed = true;
-        const formData = new FormData();
-        formData.append('base64Image', `data:application/pdf;base64,${file.buffer.toString('base64')}`);
-        formData.append('apikey', 'helloworld'); // Free fallback key
-        formData.append('language', 'eng');
-
-        const ocrRes = await fetch('https://api.ocr.space/parse/image', {
-          method: 'POST',
-          body: formData
-        });
-        const ocrData = await ocrRes.json();
-        if (ocrData.ParsedResults && ocrData.ParsedResults.length > 0) {
-          extractedText = ocrData.ParsedResults.map(r => r.ParsedText).join('\n').substring(0, 15000);
-        }
-      }
-
-      if (!extractedText.trim()) {
-        throw new AppError('Could not extract text from this PDF via text extraction or OCR.', 422);
-      }
-      console.log('[AI] PDF extraction length:', extractedText.length, 'chars');
-
+      console.log('[AI] Running Gemini extraction on PDF...');
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: file.buffer.toString('base64'),
+            mimeType: 'application/pdf'
+          }
+        },
+        'Extract and return all text from this PDF document exactly as it is, without any commentary or markdown wrapper.'
+      ]);
+      extractedText = (result.response.text() || '').substring(0, 15000);
     } else {
-      // ── Image via Local Tesseract OCR ──────────────────────────────────────
-      console.log('[AI] Running local Tesseract OCR on image...');
-      const Tesseract = require('tesseract.js');
-      const { data: { text } } = await Tesseract.recognize(file.buffer, 'eng');
-      extractedText = text.substring(0, 15000);
-      
-      if (!extractedText.trim()) {
-        throw new AppError('Could not read any text from this image. Please upload an image with clearer text.', 422);
-      }
-      console.log('[AI] Tesseract OCR text length:', extractedText.length, 'chars');
+      console.log('[AI] Running Gemini OCR on image...');
+      const result = await model.generateContent([
+        {
+          inlineData: {
+            data: file.buffer.toString('base64'),
+            mimeType: file.mimetype || 'image/png'
+          }
+        },
+        'Perform OCR on this image. Extract and return all text content accurately.'
+      ]);
+      extractedText = (result.response.text() || '').substring(0, 15000);
+    }
+
+    if (!extractedText.trim()) {
+      throw new AppError('Could not read any text from the uploaded file.', 422);
     }
 
     const userPrompt = additionalPrompt
@@ -278,6 +276,7 @@ Return ONLY the JSON object. Do not include any extra text outside the JSON obje
       : `Please write a LinkedIn post based on the following extracted document/image content.\n\nExtracted Content:\n${extractedText}`;
 
     usedModel = 'llama-3.3-70b-versatile';
+    const groq = getGroqClient(env);
     completion = await groq.chat.completions.create({
       model: usedModel,
       messages: [

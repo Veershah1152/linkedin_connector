@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata = {
   title: "Lyra Suite — LinkedIn Content & Career Automation",
@@ -14,7 +15,11 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body style={{ colorScheme: "light" }}>{children}</body>
+      <body style={{ colorScheme: "light" }}>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
     </html>
   );
 }

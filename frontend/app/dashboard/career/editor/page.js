@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 import ModernTemplate from "@/components/resume-templates/ModernTemplate";
 import ClassicTemplate from "@/components/resume-templates/ClassicTemplate";
 import MinimalTemplate from "@/components/resume-templates/MinimalTemplate";
@@ -176,12 +177,14 @@ function ItemCard({ children, onDelete }) {
 // ─────────────────────────────────────────────
 // MAIN EDITOR PAGE
 // ─────────────────────────────────────────────
-export default function ResumeEditorPage() {
-  const params = useParams();
+function ResumeEditorContent() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const resumeId = params?.id;
+  const resumeId = searchParams.get("id");
+  const toast = useToast();
 
   const [resume, setResume] = useState(null);
+  const [previewResume, setPreviewResume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState("contact");
@@ -201,11 +204,22 @@ export default function ResumeEditorPage() {
   const [atsOptimizing, setAtsOptimizing] = useState(false);
   const [atsResult, setAtsResult] = useState(null);
 
+  const [improvingSummary, setImprovingSummary] = useState(false);
+  const [improvingBulletIdx, setImprovingBulletIdx] = useState(null);
+
   const saveTimer = useRef(null);
 
   useEffect(() => {
     if (resumeId) fetchResume();
   }, [resumeId]);
+
+  useEffect(() => {
+    if (!resume) return;
+    const handler = setTimeout(() => {
+      setPreviewResume(resume);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [resume]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -256,11 +270,13 @@ export default function ResumeEditorPage() {
 
   const update = (path, value) => {
     setResume(prev => {
-      const next = structuredClone(prev);
       const parts = path.split(".");
+      const next = { ...prev };
       let cur = next;
       for (let i = 0; i < parts.length - 1; i++) {
-        cur = cur[parts[i]];
+        const part = parts[i];
+        cur[part] = { ...cur[part] };
+        cur = cur[part];
       }
       cur[parts[parts.length - 1]] = value;
       scheduleAutosave(next);
@@ -270,8 +286,9 @@ export default function ResumeEditorPage() {
 
   const updateArrayItem = (field, index, key, value) => {
     setResume(prev => {
-      const next = structuredClone(prev);
-      next[field][index][key] = value;
+      const next = { ...prev };
+      next[field] = [...prev[field]];
+      next[field][index] = { ...next[field][index], [key]: value };
       scheduleAutosave(next);
       return next;
     });
@@ -279,8 +296,8 @@ export default function ResumeEditorPage() {
 
   const addArrayItem = (field, template) => {
     setResume(prev => {
-      const next = structuredClone(prev);
-      if (!next[field]) next[field] = [];
+      const next = { ...prev };
+      next[field] = prev[field] ? [...prev[field]] : [];
       next[field].push({ id: uid(), ...template });
       scheduleAutosave(next);
       return next;
@@ -289,7 +306,8 @@ export default function ResumeEditorPage() {
 
   const removeArrayItem = (field, index) => {
     setResume(prev => {
-      const next = structuredClone(prev);
+      const next = { ...prev };
+      next[field] = [...prev[field]];
       next[field].splice(index, 1);
       scheduleAutosave(next);
       return next;
@@ -335,20 +353,136 @@ export default function ResumeEditorPage() {
       if (res.success) {
         setAtsResult(res.data);
         setResume(res.data.resume);
+        toast("ATS optimization completed successfully!", "success");
       }
     } catch (err) {
-      alert("ATS optimization failed: " + err.message);
+      toast("ATS optimization failed: " + err.message, "error");
     } finally {
       setAtsOptimizing(false);
     }
   };
 
+  const handleImproveSummary = async () => {
+    if (!resume.summary || resume.summary.trim().length < 5) {
+      toast("Please enter a summary before refining.", "error");
+      return;
+    }
+    setImprovingSummary(true);
+    try {
+      const res = await api.improveSummary(resume.summary, resume.target_role || "Software Engineer");
+      if (res.success) {
+        update("summary", res.data.summary);
+        toast("Summary optimized successfully!", "success");
+      }
+    } catch (err) {
+      toast("Failed to optimize summary: " + err.message, "error");
+    } finally {
+      setImprovingSummary(false);
+    }
+  };
+
+  const handleImproveBullet = async (index, descText) => {
+    if (!descText || descText.trim().length < 3) {
+      toast("Please enter description details before formatting.", "error");
+      return;
+    }
+    setImprovingBulletIdx(index);
+    try {
+      const res = await api.improveBullet(descText, resume.target_role || "Software Engineer");
+      if (res.success) {
+        updateArrayItem("work_experience", index, "description", res.data.bullet);
+        toast("Bullet points formatted using STAR method!", "success");
+      }
+    } catch (err) {
+      toast("Failed to format bullets: " + err.message, "error");
+    } finally {
+      setImprovingBulletIdx(null);
+    }
+  };
+
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "#F8F9FC" }}>
-        <div style={{ textAlign: "center", color: "#6B7280" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>📝</div>
-          <p style={{ fontWeight: 600 }}>Loading resume workspace...</p>
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F8F9FC", fontFamily: "Inter, sans-serif" }}>
+        {/* Sidebar Skeleton */}
+        <div style={{ width: 240, background: "#FFFFFF", borderRight: "1px solid #E5E7EB", padding: "24px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="skeleton" style={{ width: 120, height: 16, marginBottom: 12 }} />
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="skeleton" style={{ width: "100%", height: 36, borderRadius: 10 }} />
+          ))}
+          <div style={{ marginTop: "auto" }}>
+            <div className="skeleton" style={{ width: "100%", height: 36, borderRadius: 10, marginBottom: 8 }} />
+            <div className="skeleton" style={{ width: "100%", height: 38, borderRadius: 10 }} />
+          </div>
+        </div>
+
+        {/* Form Skeleton */}
+        <div style={{ flex: 1, padding: "40px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div className="skeleton" style={{ width: 240, height: 28, borderRadius: 6, marginBottom: 8 }} />
+              <div className="skeleton" style={{ width: 180, height: 14, borderRadius: 4 }} />
+            </div>
+            <div className="skeleton" style={{ width: 120, height: 32, borderRadius: 8 }} />
+          </div>
+
+          <div style={{ padding: 32, background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 16, display: "flex", flexDirection: "column", gap: 20 }}>
+            <div className="skeleton" style={{ width: 200, height: 20, borderRadius: 4, marginBottom: 10 }} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {[...Array(6)].map((_, i) => (
+                <div key={i}>
+                  <div className="skeleton" style={{ width: 80, height: 12, borderRadius: 4, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ width: "100%", height: 40, borderRadius: 8 }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Preview Skeleton */}
+        <div style={{ width: "42vw", maxWidth: 580, background: "#F3F4F6", borderLeft: "1px solid #E5E7EB", padding: "24px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ width: "100%", height: 44, background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 14px", marginBottom: 20 }}>
+            <div className="skeleton" style={{ width: 80, height: 16 }} />
+            <div className="skeleton" style={{ width: 120, height: 24 }} />
+          </div>
+          <div style={{ width: "100%", maxWidth: "210mm", height: "297mm", background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 8, padding: 32, display: "flex", flexDirection: "column", gap: 24, boxShadow: "0 10px 25px rgba(0,0,0,0.05)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid #E2E8F0", paddingBottom: 16 }}>
+              <div>
+                <div className="skeleton" style={{ width: 180, height: 28, borderRadius: 4, marginBottom: 8 }} />
+                <div className="skeleton" style={{ width: 100, height: 14, borderRadius: 4 }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div className="skeleton" style={{ width: 140, height: 12 }} />
+                <div className="skeleton" style={{ width: 120, height: 12 }} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, flex: 1 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div>
+                  <div className="skeleton" style={{ width: 100, height: 14, marginBottom: 8 }} />
+                  <div className="skeleton" style={{ width: "100%", height: 48 }} />
+                </div>
+                <div>
+                  <div className="skeleton" style={{ width: 120, height: 14, marginBottom: 12 }} />
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} style={{ marginBottom: 12 }}>
+                      <div className="skeleton" style={{ width: 150, height: 14, marginBottom: 6 }} />
+                      <div className="skeleton" style={{ width: "100%", height: 32 }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ borderLeft: "2px solid #E2E8F0", paddingLeft: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+                <div>
+                  <div className="skeleton" style={{ width: 80, height: 14, marginBottom: 12 }} />
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="skeleton" style={{ width: 60, height: 24, borderRadius: 6 }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -381,7 +515,7 @@ export default function ResumeEditorPage() {
   const social = resume.social_links || {};
 
   const renderActiveTemplate = () => {
-    const props = { resume };
+    const props = { resume: previewResume || resume };
     switch (selectedTemplate) {
       case "modern": return <ModernTemplate {...props} />;
       case "classic": return <ClassicTemplate {...props} />;
@@ -575,10 +709,11 @@ export default function ResumeEditorPage() {
             <Textarea value={resume.summary} onChange={v => update("summary", v)} placeholder="A results-driven Senior Full Stack Developer with 5+ years of experience leading cross-functional teams..." rows={6} />
             <div style={{ marginTop: 12 }}>
               <button
-                onClick={() => { setShowChat(true); setChatInput("Optimize my professional summary to highlight leadership and high-impact software delivery."); }}
-                style={{ fontSize: 12, padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.08)", color: "#7C3AED", cursor: "pointer" }}
+                onClick={handleImproveSummary}
+                disabled={improvingSummary}
+                style={{ fontSize: 12, padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.08)", color: "#7C3AED", cursor: "pointer", transition: "all 0.2s" }}
               >
-                ✨ Refine Summary with AI
+                {improvingSummary ? "✨ Refining Summary..." : "✨ Refine Summary with AI"}
               </button>
             </div>
           </EditorCard>
@@ -609,10 +744,11 @@ export default function ResumeEditorPage() {
                   <Textarea value={exp.description} onChange={v => updateArrayItem("work_experience", i, "description", v)} placeholder="• Spearheaded refactoring of legacy systems, reducing page load latency by 35%.\n• Collaborated with 5 product teams to integrate analytics, increasing customer retention." rows={5} />
                 </Field>
                 <button
-                  onClick={() => { setShowChat(true); setChatInput(`Refactor my role at ${exp.companyName} as ${exp.jobTitle} using bullet points conforming to the high-impact STAR method.`); }}
-                  style={{ fontSize: 11, padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.08)", color: "#7C3AED", cursor: "pointer", marginTop: 6 }}
+                  onClick={() => handleImproveBullet(i, exp.description)}
+                  disabled={improvingBulletIdx === i}
+                  style={{ fontSize: 11, padding: "6px 12px", borderRadius: 8, border: "1px solid rgba(124,58,237,0.3)", background: "rgba(124,58,237,0.08)", color: "#7C3AED", cursor: "pointer", marginTop: 6, transition: "all 0.2s" }}
                 >
-                  ✨ Format Bullets with AI (STAR)
+                  {improvingBulletIdx === i ? "✨ Formatting..." : "✨ Format Bullets with AI (STAR)"}
                 </button>
               </ItemCard>
             ))}
@@ -1092,5 +1228,13 @@ function EditorCard({ title, children }) {
       </h2>
       {children}
     </div>
+  );
+}
+
+export default function ResumeEditorPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, textAlign: "center", color: "#6B7280" }}>Loading Resume Editor...</div>}>
+      <ResumeEditorContent />
+    </Suspense>
   );
 }

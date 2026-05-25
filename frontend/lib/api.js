@@ -6,11 +6,22 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 async function request(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
 
+  let token = null;
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('accessToken');
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     credentials: 'include',
     ...options,
   };
@@ -34,7 +45,13 @@ export const api = {
   // Auth
   getLoginUrl: () => request('/api/auth/linkedin'),
   getMe: () => request('/api/auth/me'),
-  logout: () => request('/api/auth/logout', { method: 'POST' }),
+  logout: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    }
+    return request('/api/auth/logout', { method: 'POST' });
+  },
   refresh: () => request('/api/auth/refresh', { method: 'POST' }),
 
   // Posts
@@ -110,6 +127,23 @@ export const api = {
     request(`/api/career/resumes/${id}/ats-optimize`, {
       method: 'POST',
       body: JSON.stringify({ targetRole, targetScore }),
+    }),
+
+  // Micro-AI segment optimizations
+  improveBullet: (bulletText, targetRole) =>
+    request('/api/career/ai/improve-bullet', {
+      method: 'POST',
+      body: JSON.stringify({ bulletText, targetRole }),
+    }),
+  rewriteText: (text, tone) =>
+    request('/api/career/ai/rewrite', {
+      method: 'POST',
+      body: JSON.stringify({ text, tone }),
+    }),
+  improveSummary: (summaryText, targetRole) =>
+    request('/api/career/ai/improve-summary', {
+      method: 'POST',
+      body: JSON.stringify({ summaryText, targetRole }),
     }),
 };
 

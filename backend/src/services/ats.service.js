@@ -4,9 +4,12 @@ const { supabaseAdmin } = require('../config/supabase');
 const { AppError } = require('../middleware/error');
 const resumeService = require('./resume.service');
 
-const groq = new Groq({
-  apiKey: config.groq.apiKey || process.env.GROQ_API_KEY || 'missing_api_key_set_in_env',
-});
+const getGroqClient = (env) => {
+  const dynamicConfig = config.getConfig(env);
+  return new Groq({
+    apiKey: dynamicConfig.groq.apiKey || 'missing_api_key_set_in_env',
+  });
+};
 
 // Helper to clean up Markdown-wrapped JSON response from Groq
 const cleanAndParseJSON = (text) => {
@@ -30,7 +33,7 @@ const cleanAndParseJSON = (text) => {
 /**
  * Perform ATS Analysis on a resume for a target job role
  */
-const analyzeATS = async (userId, resumeId, targetRole) => {
+const analyzeATS = async (userId, resumeId, targetRole, env) => {
   const resume = await resumeService.getResumeById(userId, resumeId);
 
   const systemPrompt = `You are a professional ATS (Applicant Tracking System) scanner and HR screener.
@@ -73,6 +76,7 @@ Education: ${JSON.stringify(resume.education)}
 Certifications: ${JSON.stringify(resume.certifications)}`;
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
@@ -153,7 +157,7 @@ module.exports = {
  * AI Chat: Apply natural language instructions to modify a resume
  * e.g. "Make my summary more senior", "Add React to skills", "Rewrite TechCorp experience"
  */
-async function chatWithAI(userId, resumeId, userMessage, chatHistory = []) {
+async function chatWithAI(userId, resumeId, userMessage, chatHistory = [], env) {
   const resume = await resumeService.getResumeById(userId, resumeId);
 
   const systemPrompt = `You are an expert AI Resume Assistant. You have access to the user's current resume data.
@@ -203,6 +207,7 @@ Rules:
   ];
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages,
@@ -246,7 +251,7 @@ Rules:
 /**
  * ATS Target Optimizer: Optimize resume to reach a specific ATS score target
  */
-async function atsTargetOptimize(userId, resumeId, targetRole, targetScore) {
+async function atsTargetOptimize(userId, resumeId, targetRole, targetScore, env) {
   const resume = await resumeService.getResumeById(userId, resumeId);
 
   const systemPrompt = `You are an elite ATS optimization specialist. Your goal is to rewrite a resume so it achieves approximately ${targetScore}% ATS compatibility score for the role: "${targetRole}".
@@ -289,6 +294,7 @@ Projects: ${JSON.stringify(resume.projects)}
 Education: ${JSON.stringify(resume.education)}`;
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [

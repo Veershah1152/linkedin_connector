@@ -9,6 +9,7 @@ const resumeService = require('../services/resume.service');
 const atsService = require('../services/ats.service');
 const certificationService = require('../services/certification.service');
 const profileParserService = require('../services/profile-parser.service');
+const aiCoreService = require('../services/ai-core.service');
 
 const router = express.Router();
 
@@ -53,6 +54,21 @@ const atsSchema = z.object({
 
 const rollbackSchema = z.object({
   version: z.number().int().positive('Version must be a positive integer'),
+});
+
+const improveBulletSchema = z.object({
+  bulletText: z.string().min(3, 'Bullet point must be at least 3 characters').max(1000),
+  targetRole: z.string().min(2, 'Target role is required').max(255),
+});
+
+const rewriteTextSchema = z.object({
+  text: z.string().min(3, 'Text must be at least 3 characters').max(3000),
+  tone: z.string().max(100).optional(),
+});
+
+const improveSummarySchema = z.object({
+  summaryText: z.string().min(5, 'Summary must be at least 5 characters').max(3000),
+  targetRole: z.string().min(2, 'Target role is required').max(255),
 });
 
 // Require JWT authentication for all career automation endpoints
@@ -380,6 +396,48 @@ router.post('/resumes/:id/ats-optimize', async (req, res, next) => {
       score
     );
     res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/career/ai/improve-bullet
+ * AI Bullet optimization
+ */
+router.post('/ai/improve-bullet', validate(improveBulletSchema), async (req, res, next) => {
+  try {
+    const { bulletText, targetRole } = req.body;
+    const optimized = await aiCoreService.improveBulletPoint(bulletText, targetRole);
+    res.json({ success: true, data: { bullet: optimized } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/career/ai/rewrite
+ * General AI Professional rewriting
+ */
+router.post('/ai/rewrite', validate(rewriteTextSchema), async (req, res, next) => {
+  try {
+    const { text, tone } = req.body;
+    const optimized = await aiCoreService.rewriteProfessionally(text, tone);
+    res.json({ success: true, data: { rewrittenText: optimized } });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/career/ai/improve-summary
+ * AI Resume summary optimization
+ */
+router.post('/ai/improve-summary', validate(improveSummarySchema), async (req, res, next) => {
+  try {
+    const { summaryText, targetRole } = req.body;
+    const optimized = await aiCoreService.improveSummary(summaryText, targetRole);
+    res.json({ success: true, data: { summary: optimized } });
   } catch (error) {
     next(error);
   }

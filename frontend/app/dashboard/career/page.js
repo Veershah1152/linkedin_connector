@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useToast } from "@/components/ui/Toast";
 import {
   Upload,
   FileText,
@@ -142,6 +143,7 @@ const btnSecondary = {
 
 export default function CareerDashboard() {
   const router = useRouter();
+  const toast = useToast();
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
   const [resumes, setResumes] = useState([]);
   const [activeResume, setActiveResume] = useState(null);
@@ -310,7 +312,7 @@ export default function CareerDashboard() {
       if (response.success) {
         setShowSyncModal(false); setLinkedinFile(null); setLinkedinText(""); setCvFile(null); setCvText("");
         await fetchResumes();
-        router.push(`/dashboard/career/editor/${response.data.id}`);
+        router.push(`/dashboard/career/editor?id=${response.data.id}`);
       } else {
         setSyncError(response.error || "Failed to parse and merge details.");
       }
@@ -346,11 +348,11 @@ export default function CareerDashboard() {
         });
         await fetchResumes();
         fetchVersions(freshResume.id);
-        router.push(`/dashboard/career/editor/${freshResume.id}`);
+        router.push(`/dashboard/career/editor?id=${freshResume.id}`);
       }
     } catch (err) {
       console.error("Create manual resume failed:", err);
-      alert("Failed to create resume: " + err.message);
+      toast("Failed to create resume: " + err.message, "error");
     } finally {
       setCreating(false);
     }
@@ -389,12 +391,12 @@ export default function CareerDashboard() {
           title: optimized.title || "", target_role: optimized.target_role || "",
           summary: optimized.summary || "", skills: optimized.skills || []
         });
-        alert(`Resume optimized for ${selectedRole}!`);
+        toast(`Resume optimized for ${selectedRole}!`, "success");
         fetchResumes(); fetchVersions(activeResume.id);
       }
     } catch (err) {
       console.error("Optimization failed:", err);
-      alert("AI optimization failed: " + err.message);
+      toast("AI optimization failed: " + err.message, "error");
     } finally { setOptimizing(false); }
   };
 
@@ -407,7 +409,7 @@ export default function CareerDashboard() {
       if (data.success) { setAtsReport(data.data.analysis); fetchResumes(); }
     } catch (err) {
       console.error("ATS scanning failed:", err);
-      alert("ATS scanning failed: " + err.message);
+      toast("ATS scanning failed: " + err.message, "error");
     } finally { setScanning(false); }
   };
 
@@ -425,10 +427,11 @@ export default function CareerDashboard() {
           summary: rolledBack.summary || "", skills: rolledBack.skills || []
         });
         fetchResumes(); fetchVersions(activeResume.id);
-        alert(`Rolled back to version ${versionNum}.`);
+        toast(`Rolled back to version ${versionNum}.`, "success");
       }
     } catch (err) {
-      console.error("Rollback failed:", err); alert("Rollback failed: " + err.message);
+      console.error("Rollback failed:", err);
+      toast("Rollback failed: " + err.message, "error");
     }
   };
 
@@ -436,19 +439,19 @@ export default function CareerDashboard() {
   const handleUploadCert = async (e) => {
     e.preventDefault();
     if (!certDetails.title || !certDetails.issuingOrganization) {
-      alert("Please fill in the certification title and issuing organization."); return;
+      toast("Please fill in the certification title and issuing organization.", "error"); return;
     }
     setUploadingCert(true);
     try {
       const data = await api.uploadCertification(certFile, certDetails);
       if (data.success) {
-        alert("Certification uploaded successfully!");
+        toast("Certification uploaded successfully!", "success");
         setCertDetails({ title: "", issuingOrganization: "", issueDate: "", credentialId: "", credentialUrl: "" });
         setCertFile(null); fetchCertifications();
       }
     } catch (err) {
       console.error("Upload cert error:", err);
-      alert("Certification upload failed: " + err.message);
+      toast("Certification upload failed: " + err.message, "error");
     } finally { setUploadingCert(false); }
   };
 
@@ -457,15 +460,15 @@ export default function CareerDashboard() {
       const data = await api.publishCertification(certId);
       if (data.success) {
         if (data.directPublished) {
-          alert("Published to LinkedIn!"); fetchCertifications();
+          toast("Published to LinkedIn!", "success"); fetchCertifications();
         } else if (data.sharingUrl) {
-          alert("Redirecting to LinkedIn pre-filled form...");
+          toast("Redirecting to LinkedIn pre-filled form...", "info");
           window.open(data.sharingUrl, "_blank");
         }
       }
     } catch (err) {
       console.error("Publish certification failed:", err);
-      alert("Publishing failed: " + err.message);
+      toast("Publishing failed: " + err.message, "error");
     }
   };
 
@@ -634,7 +637,7 @@ export default function CareerDashboard() {
                       v{activeResume.version}
                     </span>
                     <button
-                      onClick={() => router.push(`/dashboard/career/editor/${activeResume.id}`)}
+                      onClick={() => router.push(`/dashboard/career/editor?id=${activeResume.id}`)}
                       style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: T.primary, background: "none", border: "none", cursor: "pointer" }}
                     >
                       <Wand2 size={14} /> Full Split Editor <ChevronRight size={12} />
@@ -721,11 +724,11 @@ export default function CareerDashboard() {
 
                 {/* Bottom actions */}
                 <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
-                  <button onClick={() => router.push(`/dashboard/career/editor/${activeResume.id}`)} style={btnPrimary}>
+                  <button onClick={() => router.push(`/dashboard/career/editor?id=${activeResume.id}`)} style={btnPrimary}>
                     <Wand2 size={16} /> Full Split Screen Workspace
                   </button>
                   <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => router.push(`/dashboard/career/preview/${activeResume.id}`)} style={btnSecondary}>
+                    <button onClick={() => router.push(`/dashboard/career/preview?id=${activeResume.id}`)} style={btnSecondary}>
                       <Eye size={16} /> Preview
                     </button>
                     <button onClick={() => window.print()} style={btnSecondary}>
@@ -1050,7 +1053,7 @@ export default function CareerDashboard() {
                 })}
               </div>
               <button
-                onClick={() => router.push(`/dashboard/career/preview/${activeResume.id}`)}
+                onClick={() => router.push(`/dashboard/career/preview?id=${activeResume.id}`)}
                 style={{ ...btnPrimary, width: "100%", justifyContent: "center", fontSize: 12, padding: "8px 16px" }}
               >
                 <Eye size={14} /> Full Printable Preview

@@ -1,11 +1,19 @@
 const Groq = require('groq-sdk');
-const pdfParse = require('pdf-parse');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const config = require('../config/env');
 const { AppError } = require('../middleware/error');
 
-const groq = new Groq({
-  apiKey: config.groq.apiKey || process.env.GROQ_API_KEY || 'missing_api_key_set_in_env',
-});
+const getGroqClient = (env) => {
+  const dynamicConfig = config.getConfig(env);
+  return new Groq({
+    apiKey: dynamicConfig.groq.apiKey || 'missing_api_key_set_in_env',
+  });
+};
+
+const getGeminiClient = (env) => {
+  const dynamicConfig = config.getConfig(env);
+  return new GoogleGenerativeAI(dynamicConfig.gemini.apiKey || 'missing_api_key_set_in_env');
+};
 
 // Helper to clean up Markdown-wrapped JSON response from Groq
 const cleanAndParseJSON = (text) => {
@@ -31,13 +39,23 @@ const cleanAndParseJSON = (text) => {
  * @param {Buffer} buffer 
  * @returns {Promise<string>}
  */
-const extractTextFromPDF = async (buffer) => {
+const extractTextFromPDF = async (buffer, env) => {
   try {
-    const data = await pdfParse(buffer);
-    return data.text || '';
+    const gemini = getGeminiClient(env);
+    const model = gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: buffer.toString('base64'),
+          mimeType: 'application/pdf',
+        },
+      },
+      'Extract and return all text from this PDF document exactly as it is, without any commentary or markdown wrapper.',
+    ]);
+    return result.response.text() || '';
   } catch (err) {
-    console.error('pdf-parse failed:', err);
-    throw new AppError('Failed to parse PDF document. Please ensure it is a valid LinkedIn PDF export.', 400);
+    console.error('Gemini PDF extraction failed:', err);
+    throw new AppError('Failed to parse PDF document. Please ensure it is a valid PDF.', 400);
   }
 };
 
@@ -46,7 +64,7 @@ const extractTextFromPDF = async (buffer) => {
  * @param {string} rawText 
  * @returns {Promise<object>} Parsed resume details matching the schema
  */
-const parseProfileWithAI = async (rawText) => {
+const parseProfileWithAI = async (rawText, env) => {
   const systemPrompt = `You are an expert AI Resume Builder and Profile Parser.
 Your task is to parse raw text extracted from a LinkedIn profile (which may be a PDF export or raw copied text) and construct a complete, professional, FlowCV-style resume.
 
@@ -122,6 +140,7 @@ Important Instructions:
 5. If some sections are missing, return empty arrays/objects rather than making up fake details. Make the title descriptive and include the date.`;
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
@@ -149,7 +168,7 @@ Important Instructions:
  * @param {string} cvText 
  * @returns {Promise<object>} Parsed resume details matching the schema
  */
-const mergeAndParseProfilesWithAI = async (linkedinText, cvText) => {
+const mergeAndParseProfilesWithAI = async (linkedinText, cvText, env) => {
   const systemPrompt = `You are an expert AI Resume Builder and Profile Parser.
 Your task is to merge, de-duplicate, and synthesize information from two separate profile inputs:
 1. A LinkedIn profile (which may contain experiences, posts, volunteering, skills, etc.)
@@ -232,6 +251,7 @@ JSON Output Schema:
   const userPrompt = `LinkedIn Profile Content:\n\n${linkedinText}\n\n=========================\n\nPrevious CV / Resume Content:\n\n${cvText}`;
 
   try {
+    const groq = getGroqClient(env);
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
