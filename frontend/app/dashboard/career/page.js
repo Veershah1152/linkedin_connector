@@ -1189,7 +1189,7 @@ export default function CareerDashboard() {
             </div>
 
             <form onSubmit={handleProfileParseSubmit} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className="modal-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 {/* LinkedIn Panel */}
                 <div>
                   <label style={labelStyle}>Source 1: LinkedIn Profile PDF</label>

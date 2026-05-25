@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { CalendarOff, Rocket, Clock, CalendarRange, X, Calendar } from "lucide-react";
+import { CalendarOff, Rocket, Clock, CalendarRange, X, Calendar, ChevronRight } from "lucide-react";
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -103,10 +104,8 @@ export default function SchedulePage() {
       </div>
 
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
-          {days.map((_, idx) => (
-            <div key={idx} style={{ height: 160, borderRadius: 12 }} className="skeleton" />
-          ))}
+        <div className="schedule-list" style={{ gap: 10 }}>
+          {[1,2,3].map((i) => <div key={i} style={{ height: 70, borderRadius: 12 }} className="skeleton" />)}
         </div>
       ) : scheduledPosts.length === 0 ? (
         <div style={{ background: "white", borderRadius: 20, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", padding: "60px 24px", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
@@ -120,58 +119,118 @@ export default function SchedulePage() {
           </Link>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
-          {days.map((d) => {
-            const key = d.toDateString();
-            const items = postsByDay.get(key) || [];
-            const isToday = d.toDateString() === new Date().toDateString();
-
-            return (
-              <div
-                key={d.toISOString()}
-                style={{
-                  background: "white", borderRadius: 14, padding: "10px 8px",
-                  minHeight: 160, border: isToday ? "2px solid #6366F1" : "1px solid #E5E7EB",
-                  boxShadow: isToday ? "0 0 0 4px rgba(99,102,241,0.08)" : "0 1px 4px rgba(0,0,0,0.04)",
-                  display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0,
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
-                  <div style={{ fontSize: 9, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.1em", color: isToday ? "#6366F1" : "#9CA3AF" }}>
-                    {d.toLocaleDateString(undefined, { weekday: "short" })}
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: isToday ? "#6366F1" : "#111827" }}>
-                    {d.getDate()}
-                  </div>
-                </div>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-                  {items.sort((a, b) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at)).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setOpenPostId(p.id)}
-                      style={{
-                        textAlign: "left", borderRadius: 8, padding: "6px 8px",
-                        background: "#FFFBEB", border: "1px solid #FDE68A",
-                        cursor: "pointer", transition: "all 0.15s ease",
-                      }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = "#FEF3C7"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFBEB"; }}
-                    >
-                      <div style={{ fontSize: 9, color: "#92400E", fontWeight: 800, display: "flex", alignItems: "center", gap: 3, marginBottom: 3 }}>
-                        <Clock size={8} />
-                        {new Date(p.scheduled_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+        <>
+          {/* ── MOBILE LIST VIEW ── */}
+          <div className="schedule-list">
+            {scheduledPosts
+              .filter(p => p.scheduled_at)
+              .sort((a, b) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at))
+              .map((p) => {
+                const dt = new Date(p.scheduled_at);
+                const isToday = dt.toDateString() === new Date().toDateString();
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => setOpenPostId(p.id)}
+                    style={{
+                      width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 14,
+                      background: "white", borderRadius: 14, padding: "14px 16px",
+                      border: isToday ? "2px solid #6366F1" : "1px solid #E5E7EB",
+                      boxShadow: isToday ? "0 0 0 3px rgba(99,102,241,0.08)" : "0 1px 4px rgba(0,0,0,0.04)",
+                      cursor: "pointer", transition: "all 0.15s ease",
+                    }}
+                  >
+                    {/* Date bubble */}
+                    <div style={{
+                      flexShrink: 0, width: 48, height: 48, borderRadius: 12,
+                      background: isToday ? "#EEF2FF" : "#F9FAFB",
+                      border: `1px solid ${isToday ? "#C7D2FE" : "#E5E7EB"}`,
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: isToday ? "#6366F1" : "#9CA3AF" }}>
+                        {dt.toLocaleDateString(undefined, { month: "short" })}
+                      </span>
+                      <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1, color: isToday ? "#6366F1" : "#111827" }}>
+                        {dt.getDate()}
+                      </span>
+                    </div>
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <Clock size={11} color="#F59E0B" />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#92400E" }}>
+                          {dt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        </span>
+                        <span style={{ fontSize: 11, color: "#9CA3AF" }}>·</span>
+                        <span style={{ fontSize: 11, color: "#9CA3AF" }}>
+                          {dt.toLocaleDateString(undefined, { weekday: "short" })}
+                        </span>
+                        {isToday && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", padding: "1px 6px", borderRadius: 9999 }}>Today</span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 10, color: "#374151", fontWeight: 600, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                      <p style={{ fontSize: 13, color: "#374151", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", fontWeight: 500 }}>
                         {p.content}
-                      </div>
-                    </button>
-                  ))}
+                      </p>
+                    </div>
+                    <ChevronRight size={16} color="#9CA3AF" style={{ flexShrink: 0 }} />
+                  </button>
+                );
+              })}
+          </div>
+
+          {/* ── DESKTOP CALENDAR VIEW ── */}
+          <div className="schedule-cal">
+            {days.map((d) => {
+              const key = d.toDateString();
+              const items = postsByDay.get(key) || [];
+              const isToday = d.toDateString() === new Date().toDateString();
+              return (
+                <div
+                  key={d.toISOString()}
+                  style={{
+                    background: "white", borderRadius: 14, padding: "10px 8px",
+                    minHeight: 160, border: isToday ? "2px solid #6366F1" : "1px solid #E5E7EB",
+                    boxShadow: isToday ? "0 0 0 4px rgba(99,102,241,0.08)" : "0 1px 4px rgba(0,0,0,0.04)",
+                    display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", fontWeight: 800, letterSpacing: "0.1em", color: isToday ? "#6366F1" : "#9CA3AF" }}>
+                      {d.toLocaleDateString(undefined, { weekday: "short" })}
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: isToday ? "#6366F1" : "#111827" }}>{d.getDate()}</div>
+                  </div>
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+                    {items.sort((a, b) => +new Date(a.scheduled_at) - +new Date(b.scheduled_at)).map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setOpenPostId(p.id)}
+                        style={{
+                          textAlign: "left", borderRadius: 8, padding: "6px 8px",
+                          background: "#FFFBEB", border: "1px solid #FDE68A",
+                          cursor: "pointer", transition: "all 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "#FEF3C7"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFBEB"; }}
+                      >
+                        <div style={{ fontSize: 9, color: "#92400E", fontWeight: 800, display: "flex", alignItems: "center", gap: 3, marginBottom: 3 }}>
+                          <Clock size={8} />
+                          {new Date(p.scheduled_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                        </div>
+                        <div style={{ fontSize: 10, color: "#374151", fontWeight: 600, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                          {p.content}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
+
 
       {/* Reschedule Modal */}
       {openPostId && activePost && (

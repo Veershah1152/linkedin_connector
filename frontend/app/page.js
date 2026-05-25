@@ -27,9 +27,10 @@ export default function HomePage() {
     <div style={{ minHeight: "100vh", background: "#F8F9FC", color: "#111827" }}>
       {/* ===== NAVBAR ===== */}
       <nav
+        className="landing-nav"
         style={{
           position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-          padding: "0 40px", height: 64,
+          height: 64,
           display: "flex", alignItems: "center", justifyContent: "space-between",
           background: scrolled ? "rgba(255,255,255,0.92)" : "transparent",
           backdropFilter: scrolled ? "blur(16px)" : "none",
@@ -54,7 +55,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="landing-nav-links">
           <Link
             href="/login"
             style={{
@@ -260,8 +261,9 @@ export default function HomePage() {
       {/* ===== CTA ===== */}
       <section style={{ padding: "80px 24px", textAlign: "center" }}>
         <div
+          className="landing-cta"
           style={{
-            maxWidth: 680, margin: "0 auto", padding: "64px 48px", borderRadius: 24,
+            maxWidth: 680, margin: "0 auto", borderRadius: 24,
             background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
             boxShadow: "0 20px 60px rgba(99,102,241,0.3)",
             color: "white",

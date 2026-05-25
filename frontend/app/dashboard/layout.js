@@ -9,8 +9,15 @@ import {
 } from "lucide-react";
 import { api } from "../../lib/api";
 
-
 const NAV_ITEMS = [
+  { href: "/dashboard",           label: "Overview",    icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/posts",     label: "Posts",       icon: Archive },
+  { href: "/dashboard/create",    label: "Create",      icon: PenSquare, fab: true },
+  { href: "/dashboard/schedule",  label: "Schedule",    icon: Calendar },
+  { href: "/dashboard/analytics", label: "Analytics",   icon: LineChart },
+];
+
+const SIDEBAR_NAV = [
   { href: "/dashboard",           label: "Overview",       icon: LayoutDashboard, exact: true },
   { href: "/dashboard/create",    label: "Create Post",    icon: PenSquare },
   { href: "/dashboard/schedule",  label: "Schedule",       icon: Calendar },
@@ -19,7 +26,6 @@ const NAV_ITEMS = [
   { href: "/dashboard/career",    label: "Career & Resume",icon: Briefcase },
 ];
 
-// All hex values are hardcoded — no CSS variables — so dark-mode OS can't override them
 const C = {
   sidebarBg:     "#FFFFFF",
   sidebarBorder: "#F0F0F0",
@@ -29,7 +35,6 @@ const C = {
   hoverBg:       "#F3F4F6",
   hoverText:     "#111827",
   pageBackground:"#F8F9FC",
-  headerBg:      "rgba(255,255,255,0.95)",
   headerBorder:  "#E5E7EB",
   foreground:    "#111827",
   mutedFg:       "#9CA3AF",
@@ -37,7 +42,6 @@ const C = {
   border:        "#E5E7EB",
   primary:       "#6366F1",
   primaryHover:  "#4F46E5",
-  cardBg:        "#FFFFFF",
 };
 
 export default function DashboardLayout({ children }) {
@@ -45,13 +49,10 @@ export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const sidebarWidth = sidebarOpen ? 256 : 72;
 
   const handleLogout = async () => {
-    try {
-      await api.logout();
-    } catch (e) {
-      console.error(e);
-    }
+    try { await api.logout(); } catch (e) { console.error(e); }
     if (typeof window !== "undefined") {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
@@ -64,26 +65,16 @@ export default function DashboardLayout({ children }) {
       const params = new URLSearchParams(window.location.search);
       const urlAccessToken = params.get("accessToken");
       const urlRefreshToken = params.get("refreshToken");
-
       if (urlAccessToken && urlRefreshToken) {
         localStorage.setItem("accessToken", urlAccessToken);
         localStorage.setItem("refreshToken", urlRefreshToken);
-
-        const cleanUrl = window.location.pathname + (window.location.hash || "");
-        window.history.replaceState({}, document.title, cleanUrl);
+        window.history.replaceState({}, document.title, window.location.pathname + (window.location.hash || ""));
       }
     }
-
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     const headers = { "Content-Type": "application/json" };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, {
-      headers,
-      credentials: "include",
-    })
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, { headers, credentials: "include" })
       .then((r) => r.json())
       .then((d) => { if (d.success) setUser(d.data); })
       .catch(console.error);
@@ -95,24 +86,23 @@ export default function DashboardLayout({ children }) {
   const crumbs = (pathname || "").split("/").filter(Boolean);
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: C.pageBackground }}>
+    <div style={{ minHeight: "100vh", display: "flex", background: C.pageBackground, "--sidebar-w": `${sidebarWidth}px` }}>
 
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
-        <div 
+        <div
           onClick={() => setMobileMenuOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 40 }}
-          className="md:hidden"
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 150, display: "block" }}
         />
       )}
 
-      {/* ========== SIDEBAR ========== */}
-      <aside className={`mobile-sidebar ${mobileMenuOpen ? 'open' : ''}`} style={{
-        position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50,
+      {/* ========== SIDEBAR (desktop) ========== */}
+      <aside className={`mobile-sidebar ${mobileMenuOpen ? "open" : ""}`} style={{
+        position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 200,
         display: "flex", flexDirection: "column",
         background: C.sidebarBg,
         borderRight: `1px solid ${C.sidebarBorder}`,
-        boxShadow: "1px 0 4px rgba(0,0,0,0.04)",
+        boxShadow: "2px 0 8px rgba(0,0,0,0.04)",
         width: sidebarOpen ? 256 : 72,
         transition: "width 0.25s cubic-bezier(0.4,0,0.2,1)",
         overflow: "hidden",
@@ -139,23 +129,30 @@ export default function DashboardLayout({ children }) {
               <div style={{ fontSize: 11, color: "#9CA3AF", whiteSpace: "nowrap" }}>Career & Post Automation</div>
             </div>
           )}
+          {/* Close button on mobile */}
+          {mobileMenuOpen && (
+            <button onClick={() => setMobileMenuOpen(false)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: C.mutedFg, display: "flex", alignItems: "center" }}>
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
-          {NAV_ITEMS.map((item) => {
+          {SIDEBAR_NAV.map((item) => {
             const active = isActive(item);
             const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
                 title={!sidebarOpen ? item.label : undefined}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  padding: sidebarOpen ? "9px 12px" : "9px 0",
+                  padding: sidebarOpen ? "10px 12px" : "10px 0",
                   justifyContent: sidebarOpen ? "flex-start" : "center",
-                  borderRadius: 10, marginBottom: 2,
+                  borderRadius: 10, marginBottom: 2, minHeight: 44,
                   textDecoration: "none", fontWeight: active ? 700 : 500,
                   fontSize: 14,
                   color: active ? C.activeText : C.idleText,
@@ -163,22 +160,14 @@ export default function DashboardLayout({ children }) {
                   transition: "all 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.background = C.hoverBg;
-                    e.currentTarget.style.color = C.hoverText;
-                  }
+                  if (!active) { e.currentTarget.style.background = C.hoverBg; e.currentTarget.style.color = C.hoverText; }
                 }}
                 onMouseLeave={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = C.idleText;
-                  }
+                  if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.idleText; }
                 }}
               >
                 <Icon size={17} style={{ flexShrink: 0, opacity: active ? 1 : 0.75 }} />
-                {sidebarOpen && (
-                  <span style={{ whiteSpace: "nowrap" }} className="animate-fade-in">{item.label}</span>
-                )}
+                {sidebarOpen && <span style={{ whiteSpace: "nowrap" }} className="animate-fade-in">{item.label}</span>}
               </Link>
             );
           })}
@@ -186,7 +175,6 @@ export default function DashboardLayout({ children }) {
 
         {/* Footer */}
         <div style={{ padding: 8, borderTop: `1px solid ${C.sidebarBorder}`, display: "flex", flexDirection: "column", gap: 6 }}>
-          {/* Collapse btn */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{
@@ -196,7 +184,7 @@ export default function DashboardLayout({ children }) {
               borderRadius: 8, border: `1px solid ${C.border}`,
               background: C.inputBg, color: C.mutedFg,
               fontSize: 12, fontWeight: 500, cursor: "pointer",
-              transition: "all 0.15s ease",
+              transition: "all 0.15s ease", minHeight: 36,
             }}
             onMouseEnter={(e) => { e.currentTarget.style.background = "#E5E7EB"; e.currentTarget.style.color = "#374151"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = C.inputBg; e.currentTarget.style.color = C.mutedFg; }}
@@ -204,7 +192,6 @@ export default function DashboardLayout({ children }) {
             {sidebarOpen ? <><ChevronLeft size={14} /> Collapse menu</> : <ChevronRight size={14} />}
           </button>
 
-          {/* User card */}
           <div style={{
             display: "flex", alignItems: "center", gap: 10, padding: "8px",
             borderRadius: 10, justifyContent: sidebarOpen ? "flex-start" : "center",
@@ -233,7 +220,7 @@ export default function DashboardLayout({ children }) {
             )}
             {sidebarOpen && (
               <button onClick={handleLogout} title="Sign out"
-                style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", color: C.mutedFg, transition: "all 0.15s ease", flexShrink: 0, border: "none", background: "transparent", cursor: "pointer" }}
+                style={{ width: 28, height: 28, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", color: C.mutedFg, transition: "all 0.15s ease", flexShrink: 0, border: "none", background: "transparent", cursor: "pointer", minHeight: 28 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = "#FEF2F2"; e.currentTarget.style.color = "#EF4444"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.mutedFg; }}
               >
@@ -245,34 +232,42 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* ========== MAIN AREA ========== */}
-      <div className="mobile-content" style={{
-        flex: 1, display: "flex", flexDirection: "column", minWidth: 0,
-        marginLeft: sidebarOpen ? 256 : 72,
-        transition: "margin-left 0.25s cubic-bezier(0.4,0,0.2,1)",
-      }}>
+      <div className="mobile-content" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
         {/* Sticky Header */}
         <header className="mobile-header-padding" style={{
           height: 56, position: "sticky", top: 0, zIndex: 30,
-          background: "rgba(255,255,255,0.92)",
+          background: "rgba(255,255,255,0.94)",
           borderBottom: `1px solid ${C.headerBorder}`,
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-          padding: "0 28px",
           display: "flex", alignItems: "center", gap: 12,
         }}>
-          {/* Hamburger Menu (Mobile Only) */}
-          <button 
+          {/* Hamburger: mobile only */}
+          <button
             className="md:hidden"
             onClick={() => setMobileMenuOpen(true)}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "#111827", padding: "4px" }}
+            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "#111827", padding: "4px", flexShrink: 0, minHeight: 44 }}
           >
             <Menu size={20} />
           </button>
 
-          {/* Breadcrumb */}
-          <nav className="mobile-hide" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.mutedFg, flex: 1 }}>
+          {/* Brand on mobile header */}
+          <div className="md:hidden" style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: 8,
+              background: "linear-gradient(135deg,#6366F1,#8B5CF6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 2px 6px rgba(99,102,241,0.35)", flexShrink: 0,
+            }}>
+              <Zap size={14} color="#fff" />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: 15, color: "#111827" }}>Lyra Suite</span>
+          </div>
+
+          {/* Breadcrumb: desktop only */}
+          <nav style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.mutedFg, flex: 1 }} className="mobile-hide">
             <span style={{ color: "#9CA3AF" }}>Lyra</span>
             {crumbs.map((c, i) => (
               <span key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -288,19 +283,18 @@ export default function DashboardLayout({ children }) {
             ))}
           </nav>
 
-          {/* Search */}
+          {/* Search: desktop only */}
           <div className="mobile-hide" style={{
             display: "flex", alignItems: "center", gap: 8, padding: "7px 12px",
-            borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, width: 220,
+            borderRadius: 8, border: `1px solid ${C.border}`, background: C.inputBg, width: 200,
           }}>
             <Search size={13} color="#9CA3AF" />
             <input placeholder="Search posts…" disabled style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", flex: 1, fontFamily: "inherit" }} />
-            <kbd style={{ fontSize: 10, padding: "2px 5px", borderRadius: 4, border: `1px solid ${C.border}`, color: "#9CA3AF", background: "#FFFFFF", fontFamily: "inherit" }}>⌘K</kbd>
           </div>
 
-          {/* Bell */}
-          <button
-            style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${C.border}`, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", color: "#9CA3AF", cursor: "pointer", position: "relative", transition: "all 0.15s ease" }}
+          {/* Bell: desktop only */}
+          <button className="mobile-hide"
+            style={{ width: 36, height: 36, borderRadius: 8, border: `1px solid ${C.border}`, background: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", color: "#9CA3AF", cursor: "pointer", position: "relative", transition: "all 0.15s ease", minHeight: 36 }}
             onMouseEnter={(e) => { e.currentTarget.style.background = C.inputBg; e.currentTarget.style.color = "#374151"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "#FFFFFF"; e.currentTarget.style.color = "#9CA3AF"; }}
           >
@@ -308,28 +302,56 @@ export default function DashboardLayout({ children }) {
             <span style={{ position: "absolute", top: 8, right: 8, width: 7, height: 7, borderRadius: "50%", background: C.primary, border: "1.5px solid white" }} />
           </button>
 
-          {/* New Post CTA */}
-          <Link href="/dashboard/create"
+          {/* New Post CTA: desktop only */}
+          <Link href="/dashboard/create" className="mobile-hide"
             style={{
               display: "inline-flex", alignItems: "center", gap: 6,
               padding: "8px 16px", borderRadius: 8,
               background: C.primary, color: "#FFFFFF",
               fontWeight: 700, fontSize: 13, textDecoration: "none",
               boxShadow: "0 1px 4px rgba(99,102,241,0.35)",
-              transition: "all 0.15s ease",
+              transition: "all 0.15s ease", minHeight: 36,
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = C.primaryHover; e.currentTarget.style.boxShadow = "0 4px 12px rgba(99,102,241,0.45)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = C.primary; e.currentTarget.style.boxShadow = "0 1px 4px rgba(99,102,241,0.35)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = C.primaryHover; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = C.primary; }}
           >
             <Plus size={14} /> New Post
           </Link>
         </header>
 
         {/* Page Content */}
-        <main className="animate-fade-in mobile-content" style={{ flex: 1, padding: "32px 28px", maxWidth: 1400, width: "100%", margin: "0 auto", background: C.pageBackground }}>
+        <main className="animate-fade-in page-main" style={{ flex: 1, maxWidth: 1400, width: "100%", margin: "0 auto", background: C.pageBackground }}>
           {children}
         </main>
       </div>
+
+      {/* ========== BOTTOM NAVIGATION (mobile only) ========== */}
+      <nav className="mobile-bottom-nav">
+        {NAV_ITEMS.map((item) => {
+          if (item.fab) {
+            return (
+              <div key={item.href} className="mobile-bottom-nav-fab">
+                <Link href={item.href} className="mobile-bottom-nav-fab-btn" aria-label="Create Post">
+                  <Plus size={22} color="#fff" />
+                </Link>
+              </div>
+            );
+          }
+          const active = isActive(item);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`mobile-bottom-nav-item${active ? " active" : ""}`}
+              aria-label={item.label}
+            >
+              <Icon size={20} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }

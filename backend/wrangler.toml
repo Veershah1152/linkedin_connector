@@ -5,6 +5,5 @@ compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
 SUPABASE_URL = "https://sunfqzqxhpmvpidenqtb.supabase.co"
-CLIENT_URL = "https://linkedin-connector-frontend.pages.dev"
 GROQ_API_URL = "https://api.groq.com"
 LINKEDIN_CLIENT_ID = "77ippt2xqbmkx1"

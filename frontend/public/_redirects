@@ -1,0 +1,47 @@
+# ============================================================
+# Cloudflare Pages redirect rules
+# Fixes Next.js 16 RSC payload path mismatches in static exports
+#
+# Next.js 16 client-side navigation requests flattened RSC paths like:
+#   /dashboard/create/__next.dashboard.create.txt
+# But next build --output=export generates nested paths like:
+#   /dashboard/create/__next.dashboard/create.txt
+# ============================================================
+
+# ---- dashboard root ----
+/dashboard/__next.dashboard.__PAGE__.txt /dashboard/__next.dashboard/__PAGE__.txt 200
+
+# ---- dashboard/create ----
+/dashboard/create/__next.dashboard.create.txt /dashboard/create/__next.dashboard/create.txt 200
+/dashboard/create/__next.dashboard.create.__PAGE__.txt /dashboard/create/__next.dashboard/create/__PAGE__.txt 200
+
+# ---- dashboard/posts ----
+/dashboard/posts/__next.dashboard.posts.txt /dashboard/posts/__next.dashboard/posts.txt 200
+/dashboard/posts/__next.dashboard.posts.__PAGE__.txt /dashboard/posts/__next.dashboard/posts/__PAGE__.txt 200
+
+# ---- dashboard/schedule ----
+/dashboard/schedule/__next.dashboard.schedule.txt /dashboard/schedule/__next.dashboard/schedule.txt 200
+/dashboard/schedule/__next.dashboard.schedule.__PAGE__.txt /dashboard/schedule/__next.dashboard/schedule/__PAGE__.txt 200
+
+# ---- dashboard/analytics ----
+/dashboard/analytics/__next.dashboard.analytics.txt /dashboard/analytics/__next.dashboard/analytics.txt 200
+/dashboard/analytics/__next.dashboard.analytics.__PAGE__.txt /dashboard/analytics/__next.dashboard/analytics/__PAGE__.txt 200
+
+# ---- dashboard/career ----
+/dashboard/career/__next.dashboard.career.txt /dashboard/career/__next.dashboard/career.txt 200
+/dashboard/career/__next.dashboard.career.__PAGE__.txt /dashboard/career/__next.dashboard/career/__PAGE__.txt 200
+
+# ---- dashboard/career/editor ----
+/dashboard/career/editor/__next.dashboard.career.editor.txt /dashboard/career/editor/__next.dashboard/career/editor.txt 200
+/dashboard/career/editor/__next.dashboard.career.editor.__PAGE__.txt /dashboard/career/editor/__next.dashboard/career/editor/__PAGE__.txt 200
+
+# ---- dashboard/career/preview ----
+/dashboard/career/preview/__next.dashboard.career.preview.txt /dashboard/career/preview/__next.dashboard/career/preview.txt 200
+/dashboard/career/preview/__next.dashboard.career.preview.__PAGE__.txt /dashboard/career/preview/__next.dashboard/career/preview/__PAGE__.txt 200
+
+# ---- login ----
+/login/__next.login.txt /login/__next.login/__PAGE__.txt 200
+/login/__next.login.__PAGE__.txt /login/__next.login/__PAGE__.txt 200
+
+# ---- SPA fallback: serve index.html for all unmatched routes ----
+/* /index.html 200

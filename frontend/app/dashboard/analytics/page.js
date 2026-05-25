@@ -87,16 +87,16 @@ export default function AnalyticsPage() {
       ) : (
         <>
           {/* Metric Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+          <div className="analytics-grid">
             {metricCards.map((m) => {
               const Icon = m.icon;
               return (
                 <div
                   key={m.label}
                   style={{
-                    background: "white", borderRadius: 16, padding: "20px 24px",
+                    background: "white", borderRadius: 16,
                     border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                    transition: "all 0.2s ease",
+                    transition: "all 0.2s ease", padding: "16px",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.08)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; e.currentTarget.style.transform = "none"; }}
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
                       <Icon size={16} color={m.color} />
                     </div>
                   </div>
-                  <div style={{ fontSize: 30, fontWeight: 900, color: "#111827", lineHeight: 1 }}>{m.value}</div>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: "#111827", lineHeight: 1 }}>{m.value}</div>
                   <div style={{ fontSize: 11, color: "#10B981", marginTop: 6, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
                     <TrendingUp size={10} /> {m.delta}
                   </div>
@@ -117,12 +117,12 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Daily Trend Chart */}
-          <div style={{ background: "white", borderRadius: 16, padding: 24, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
-            <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>Daily Engagement Trend</h2>
-              <p style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>Impressions vs. interactions over the last 30 days.</p>
+          <div className="card-pad" style={{ background: "white", borderRadius: 16, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Daily Engagement Trend</h2>
+              <p style={{ fontSize: 13, color: "#6B7280", marginTop: 3 }}>Impressions vs. interactions — last 30 days.</p>
             </div>
-            <div style={{ height: 280 }}>
+            <div className="chart-lg">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>
@@ -150,17 +150,17 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Top Posts */}
-          <div style={{ background: "white", borderRadius: 16, padding: 24, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
-            <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>Top Performing Posts</h2>
-              <p style={{ fontSize: 13, color: "#6B7280", marginTop: 4 }}>Ranked by likes engagement.</p>
+          <div className="card-pad" style={{ background: "white", borderRadius: 16, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>Top Performing Posts</h2>
+              <p style={{ fontSize: 13, color: "#6B7280", marginTop: 3 }}>Ranked by likes engagement.</p>
             </div>
             {formattedTopPosts.length === 0 ? (
               <div style={{ padding: "40px 0", textAlign: "center", color: "#9CA3AF", fontSize: 14 }}>
                 No published posts to evaluate yet.
               </div>
             ) : (
-              <div style={{ height: 240 }}>
+              <div className="chart-md">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={formattedTopPosts} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid stroke="#F3F4F6" strokeDasharray="3 3" horizontal={false} />

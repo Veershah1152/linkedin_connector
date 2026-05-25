@@ -375,3 +375,31 @@ body {
   50%      { opacity: 0.5; }
 }
 
+/* Landing Page Responsive Navigation & Layouts */
+.landing-nav {
+  padding: 0 40px;
+}
+.landing-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .landing-nav {
+    padding: 0 16px !important;
+  }
+  .landing-nav-links {
+    gap: 8px !important;
+  }
+  .landing-nav-links a {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+  .landing-cta {
+    padding: 40px 24px !important;
+  }
+  .landing-cta h2 {
+    font-size: 26px !important;
+  }
+}

@@ -191,6 +191,7 @@ function ResumeEditorContent() {
   const [showChat, setShowChat] = useState(false);
   const [dismissedBanner, setDismissedBanner] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
+  const [mobileTab, setMobileTab] = useState("edit"); // "edit" or "preview"
 
   // AI Chat state
   const [chatHistory, setChatHistory] = useState([]);
@@ -535,8 +536,44 @@ function ResumeEditorContent() {
   return (
     <div className="mobile-stack" style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F8F9FC", color: "#111827", fontFamily: "Inter, sans-serif" }}>
 
+      {/* Mobile-only Header */}
+      <div className="mobile-editor-header" style={{ display: "none" }}>
+        <button 
+          onClick={() => router.push("/dashboard/career")} 
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit" }}
+        >
+          ← Back
+        </button>
+        <div style={{ display: "flex", background: "#F3F4F6", borderRadius: 8, padding: 3, gap: 2 }}>
+          <button 
+            onClick={() => setMobileTab("edit")} 
+            style={{
+              padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+              background: mobileTab === "edit" ? "#FFFFFF" : "transparent",
+              color: mobileTab === "edit" ? "#111827" : "#6B7280",
+              boxShadow: mobileTab === "edit" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Edit Form
+          </button>
+          <button 
+            onClick={() => setMobileTab("preview")} 
+            style={{
+              padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+              background: mobileTab === "preview" ? "#FFFFFF" : "transparent",
+              color: mobileTab === "preview" ? "#111827" : "#6B7280",
+              boxShadow: mobileTab === "preview" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+              transition: "all 0.15s ease"
+            }}
+          >
+            Preview A4
+          </button>
+        </div>
+      </div>
+
       {/* Slim Navigation Sidebar */}
-      <div className="mobile-editor-menu" style={{
+      <div className={`mobile-editor-menu ${mobileTab === "preview" ? "mobile-sidebar-hidden" : ""}`} style={{
         width: 240,
         background: "#FFFFFF",
         borderRight: "1px solid #E5E7EB",
@@ -548,15 +585,16 @@ function ResumeEditorContent() {
       }}>
         {/* Back Link */}
         <button 
+          className="mobile-hide"
           onClick={() => router.push("/dashboard/career")} 
           style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 13, marginBottom: 24, padding: 0, fontFamily: "inherit" }}
         >
           ← Career Automation
         </button>
 
-        <div style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 8, paddingLeft: 12 }}>Workspace Sections</div>
+        <div className="mobile-hide" style={{ fontSize: 10, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 8, paddingLeft: 12 }}>Workspace Sections</div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, overflowY: "auto" }}>
+        <div className="editor-nav-container" style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, overflowY: "auto" }}>
           {SECTIONS.map(s => (
             <button
               key={s.id}
@@ -592,7 +630,7 @@ function ResumeEditorContent() {
           ))}
         </div>
 
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, paddingTop: 16 }}>
+        <div className="mobile-hide" style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, paddingTop: 16 }}>
           <button
             onClick={() => setShowChat(!showChat)}
             style={{
@@ -622,7 +660,7 @@ function ResumeEditorContent() {
       </div>
 
       {/* Left Workspace Panel: Editing Forms */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "40px", background: "#F8F9FC" }}>
+      <div className={`editor-forms-panel ${mobileTab === "preview" ? "mobile-panel-hidden" : ""}`} style={{ flex: 1, overflowY: "auto", padding: "40px", background: "#F8F9FC" }}>
         
         {/* Editor Sub-Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
@@ -1006,7 +1044,7 @@ function ResumeEditorContent() {
       </div>
 
       {/* Right Preview Panel: Sticky scaled down paper */}
-      <div style={{
+      <div className={`editor-preview-panel ${mobileTab === "edit" ? "mobile-panel-hidden" : ""}`} style={{
         width: "42vw",
         maxWidth: 580,
         flexShrink: 0,
@@ -1056,18 +1094,25 @@ function ResumeEditorContent() {
           </span>
         </div>
 
-        {/* Paper Container scaled down */}
+        {/* Paper Container scaled down mathematically to fit any viewport width */}
         <div style={{
-          transform: "scale(0.58)",
-          transformOrigin: "top center",
-          width: "210mm",
-          marginBottom: -320,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
-          borderRadius: 8,
+          height: "calc(1122.5px * var(--resume-scale))",
+          width: "calc(793.7px * var(--resume-scale))",
           overflow: "hidden",
-          background: "#fff"
+          margin: "0 auto"
         }}>
-          {renderActiveTemplate()}
+          <div style={{
+            transform: "scale(var(--resume-scale))",
+            transformOrigin: "top left",
+            width: "210mm",
+            height: "297mm",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            borderRadius: 8,
+            overflow: "hidden",
+            background: "#fff"
+          }}>
+            {renderActiveTemplate()}
+          </div>
         </div>
       </div>
 

@@ -1,5 +1,7 @@
 import "./globals.css";
+import "./mobile.css";
 import { ToastProvider } from "@/components/ui/Toast";
+
 
 export const metadata = {
   title: "Lyra Suite — LinkedIn Content & Career Automation",

@@ -286,7 +286,7 @@ function CreatePostPageContent() {
   };
 
   return (
-    <div style={{ maxWidth: 1120, margin: "0 auto", padding: "16px 8px", color: T.fg, fontFamily: "inherit" }}>
+    <div style={{ maxWidth: 1120, margin: "0 auto", padding: "16px 0", color: T.fg, fontFamily: "inherit" }}>
       {/* Header */}
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 24, borderBottom: `1px solid ${T.border}`, paddingBottom: 24, marginBottom: 32 }}>
         <div>
@@ -316,7 +316,7 @@ function CreatePostPageContent() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, background: T.cardBg, border: `1px solid ${T.border}`, padding: 4, borderRadius: 12, maxWidth: 320, marginBottom: 32, boxShadow: T.shadow }}>
+      <div className="tab-bar" style={{ display: "flex", alignItems: "center", gap: 4, background: T.cardBg, border: `1px solid ${T.border}`, padding: 4, borderRadius: 12, marginBottom: 32, boxShadow: T.shadow }}>
         {[
           { id: "manual", label: "✍️ Manual Creator" },
           { id: "ai", label: "🤖 AI Generator" },
@@ -371,7 +371,7 @@ function CreatePostPageContent() {
         )}
       </div>
 
-      <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 32, alignItems: "flex-start" }}>
+      <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 24, alignItems: "flex-start" }}>
         
         {/* LEFT COLUMN (Forms) */}
         <div style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
@@ -459,7 +459,7 @@ function CreatePostPageContent() {
               </div>
 
               {/* Actions */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <div className="create-actions">
                 <button onClick={handlePublishNow} disabled={loading} style={btnPrimary}>
                   <Send size={16} /> Publish Now
                 </button>
@@ -602,7 +602,7 @@ function CreatePostPageContent() {
         </div>
 
         {/* RIGHT COLUMN (Preview / Output) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 24, position: "sticky", top: 88, minWidth: 0 }}>
+        <div className="sticky-preview" style={{ display: "flex", flexDirection: "column", gap: 24, minWidth: 0 }}>
           
           {activeTab === "manual" ? (
             /* LinkedIn Preview */

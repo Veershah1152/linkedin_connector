@@ -161,18 +161,20 @@ export default function PostsPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ background: "white", borderRadius: 16, padding: "12px 16px", border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#F9FAFB", flex: 1, minWidth: 200 }}>
+      <div style={{ background: "white", borderRadius: 16, padding: "12px 16px", border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }} className="filters-bar">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 12px", borderRadius: 8, border: "1px solid #E5E7EB", background: "#F9FAFB", flex: 1, minWidth: 180 }}>
           <Search size={13} color="#9CA3AF" />
           <input
             placeholder="Search post content..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", flex: 1, fontFamily: "inherit" }}
+            style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#111827", flex: 1, fontFamily: "inherit", width: "100%" }}
           />
         </div>
-        <SegmentedControl label="Status" value={statusFilter} onChange={setStatusFilter} options={STATUSES} />
-        <SegmentedControl label="Source" value={sourceFilter} onChange={setSourceFilter} options={SOURCES} />
+        <div className="seg-control-wrap" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <SegmentedControl label="Status" value={statusFilter} onChange={setStatusFilter} options={STATUSES} />
+          <SegmentedControl label="Source" value={sourceFilter} onChange={setSourceFilter} options={SOURCES} />
+        </div>
       </div>
 
       {/* Bulk Actions */}
@@ -192,13 +194,13 @@ export default function PostsPage() {
 
       {/* Table */}
       <div style={{ background: "white", borderRadius: 16, border: "1px solid #E5E7EB", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", overflow: "hidden" }}>
-        {/* Table header */}
-        <div style={{ display: "grid", gridTemplateColumns: "40px 1fr auto auto 140px", gap: 16, padding: "10px 20px", borderBottom: "1px solid #F3F4F6", background: "#F9FAFB", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#9CA3AF", alignItems: "center" }}>
+        {/* Table header — hidden on mobile */}
+        <div className="posts-table-header" style={{ background: "#F9FAFB", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#9CA3AF", alignItems: "center" }}>
           <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#6366F1" }} />
           <span>Content</span>
           <span>Source</span>
           <span>Status</span>
-          <span style={{ textAlign: "right" }}>Date</span>
+          <span style={{ textAlign: "right" }}>Date / Actions</span>
         </div>
 
         {loading ? (
@@ -219,42 +221,59 @@ export default function PostsPage() {
               const isBusy = actionLoadingId === post.id;
               const sc = STATUS_CONFIG[post.status] || STATUS_CONFIG.draft;
 
-              return (
+            return (
                 <div
                   key={post.id}
+                  className="posts-table-row"
                   style={{
-                    display: "grid", gridTemplateColumns: "40px 1fr auto auto 140px",
-                    gap: 16, padding: "14px 20px", alignItems: "center",
                     borderBottom: idx < filteredPosts.length - 1 ? "1px solid #F9FAFB" : "none",
                     opacity: isBusy ? 0.5 : 1, pointerEvents: isBusy ? "none" : "auto",
                     background: isSelected ? "#F5F3FF" : "white",
                     transition: "background 0.15s ease",
                   }}
                   onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = "#FAFAFA"; }}
-                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = "white"; }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = isSelected ? "#F5F3FF" : "white"; }}
                 >
-                  <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(post.id)} style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#6366F1" }} />
-                  <div style={{ minWidth: 0, paddingRight: 16 }}>
-                    <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {post.content}
-                    </p>
-                    {media && (
-                      <div style={{ marginTop: 4 }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", border: "1px solid #C7D2FE", padding: "2px 8px", borderRadius: 6 }}>
-                          {media.isPdf ? <FileText size={11} /> : <ImageIcon size={11} />} {media.name}
-                        </span>
-                      </div>
-                    )}
+                  {/* Checkbox + content — always visible */}
+                  <div className="posts-table-checkbox-content-wrapper" style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <input type="checkbox" checked={isSelected} onChange={() => toggleSelectOne(post.id)} style={{ width: 14, height: 14, cursor: "pointer", accentColor: "#6366F1", marginTop: 3, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 14, fontWeight: 500, color: "#111827", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                        {post.content}
+                      </p>
+                      {media && (
+                        <div style={{ marginTop: 4 }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", border: "1px solid #C7D2FE", padding: "2px 8px", borderRadius: 6 }}>
+                            {media.isPdf ? <FileText size={11} /> : <ImageIcon size={11} />} {media.name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, background: "#F3F4F6", color: "#6B7280", padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+
+                  {/* Meta row — visible on mobile as flex row */}
+                  <div className="posts-table-row-meta">
+                    <span style={{ fontSize: 11, fontWeight: 700, background: "#F3F4F6", color: "#6B7280", padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                      {post.ai_generated ? "🤖 AI" : "✍️ Manual"}
+                    </span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, background: sc.bg, color: sc.color, padding: "3px 9px", borderRadius: 9999, whiteSpace: "nowrap" }}>
+                      <span style={{ width: 5, height: 5, borderRadius: "50%", background: sc.dot }} />{sc.label}
+                    </span>
+                    <span style={{ fontSize: 12, color: "#9CA3AF", whiteSpace: "nowrap" }}>{fmtRelative(post.created_at)}</span>
+                  </div>
+
+                  {/* Desktop-only: source, status, date+actions columns */}
+                  <span className="posts-table-desktop-col" style={{ fontSize: 11, fontWeight: 700, background: "#F3F4F6", color: "#6B7280", padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap", display: "none" }}>
                     {post.ai_generated ? "🤖 AI" : "✍️ Manual"}
                   </span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, background: sc.bg, color: sc.color, padding: "3px 9px", borderRadius: 9999, whiteSpace: "nowrap" }}>
+                  <span className="posts-table-desktop-col" style={{ display: "none", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, background: sc.bg, color: sc.color, padding: "3px 9px", borderRadius: 9999, whiteSpace: "nowrap" }}>
                     <span style={{ width: 5, height: 5, borderRadius: "50%", background: sc.dot }} />{sc.label}
                   </span>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+
+                  {/* Actions */}
+                  <div className="posts-table-actions">
                     <span style={{ fontSize: 12, color: "#9CA3AF", whiteSpace: "nowrap" }}>{fmtRelative(post.created_at)}</span>
-                    <div style={{ display: "flex", gap: 4 }}>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                       {post.status === "draft" && (
                         <button onClick={() => handlePublish(post.id)} title="Publish" style={{ width: 28, height: 28, borderRadius: 7, border: "1px solid #E5E7EB", background: "white", color: "#9CA3AF", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s ease" }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = "#EEF2FF"; e.currentTarget.style.color = "#6366F1"; e.currentTarget.style.borderColor = "#C7D2FE"; }}

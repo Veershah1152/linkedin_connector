@@ -196,8 +196,8 @@ export default function DashboardPage() {
         />
 
         <div style={{ padding: "36px 40px", position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "center" }}>
-            <div style={{ flex: 1, minWidth: 260 }}>
+          <div className="hero-banner-inner" style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "center" }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
               <div
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 6,
@@ -215,7 +215,7 @@ export default function DashboardPage() {
                 {user?.headline || "LinkedIn Content Creator"} · Ready to build your personal brand today?
               </p>
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", flexShrink: 0 }}>
+            <div className="hero-banner-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap", flexShrink: 0 }}>
               <Link
                 href="/dashboard/create"
                 style={{
@@ -249,7 +249,7 @@ export default function DashboardPage() {
       </section>
 
       {/* ===== STATS GRID ===== */}
-      <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+      <section className="stats-grid">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -296,22 +296,23 @@ export default function DashboardPage() {
           <p style={{ fontSize: 13, color: "var(--muted-foreground)", marginTop: 4 }}>Where do you want to start today?</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+        <div className="quick-actions-grid">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
               <Link
                 key={action.href}
                 href={action.href}
+                className="qa-card-mobile"
                 style={{
-                  background: "white", borderRadius: 16, padding: "24px",
+                  background: "white", borderRadius: 16,
                   border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)",
                   textDecoration: "none", display: "flex", flexDirection: "column", gap: 16,
                   transition: "all 0.2s ease", position: "relative", overflow: "hidden",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.boxShadow = "var(--shadow-lg)";
-                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
                   e.currentTarget.style.borderColor = action.color + "40";
                 }}
                 onMouseLeave={(e) => {
@@ -320,24 +321,15 @@ export default function DashboardPage() {
                   e.currentTarget.style.borderColor = "var(--border)";
                 }}
               >
-                <div
-                  style={{
-                    width: 44, height: 44, borderRadius: 12,
-                    background: action.bg, display: "flex", alignItems: "center", justifyContent: "center",
-                  }}
-                >
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: action.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <Icon size={20} color={action.color} />
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: "var(--foreground)", marginBottom: 6 }}>
-                    {action.title}
-                  </div>
-                  <div style={{ fontSize: 13, color: "var(--muted-foreground)", lineHeight: 1.5 }}>
-                    {action.desc}
-                  </div>
+                <div className="qa-text">
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--foreground)", marginBottom: 4 }}>{action.title}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted-foreground)", lineHeight: 1.5 }}>{action.desc}</div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 13, fontWeight: 600, color: action.color, marginTop: "auto" }}>
-                  Open <ArrowUpRight size={14} />
+                <div className="qa-arrow" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: action.color, marginTop: "auto", flexShrink: 0 }}>
+                  <ArrowUpRight size={14} />
                 </div>
               </Link>
             );
