@@ -33,7 +33,14 @@ app.use(helmet());
 // CORS
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: (origin, callback) => {
+      const isLocalIp = !origin || /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
+      if (isLocalIp || origin === config.clientUrl) {
+        callback(null, true);
+      } else {
+        callback(null, config.clientUrl);
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

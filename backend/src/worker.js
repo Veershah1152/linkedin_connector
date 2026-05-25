@@ -31,12 +31,17 @@ app.use('*', cors({
     const dynamicConfig = config.getConfig(c.env);
     const clientUrl = dynamicConfig.clientUrl || 'http://localhost:3000';
     if (!origin) return clientUrl;
+    
+    // Check if origin is a local network IP address (e.g., http://192.168.1.15:3000)
+    const isLocalIp = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/.test(origin);
+    
     if (origin === clientUrl || 
         origin === 'http://localhost:3000' || 
         origin === 'https://linkedin-connector-frontend.pages.dev' ||
         origin.endsWith('.linkedin-connector-frontend.pages.dev') ||
         origin === 'https://linkmanager.dpdns.org' ||
-        origin.endsWith('.dpdns.org')) {
+        origin.endsWith('.dpdns.org') ||
+        isLocalIp) {
       return origin;
     }
     return clientUrl;

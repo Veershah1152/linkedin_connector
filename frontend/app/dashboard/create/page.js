@@ -229,7 +229,7 @@ function CreatePostPageContent() {
       else if (action === "draft") { payload.status = "draft"; if (isEditMode) payload.scheduledAt = null; }
 
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(payload) });
-      if (res.status === 401) { window.location.href = "http://localhost:5000/api/auth/linkedin"; return; }
+      if (res.status === 401) { window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/linkedin`; return; }
       const data = await res.json();
       if (!data.success) { setErrorMsg("Failed to save: " + (data.error || "Unknown error")); return; }
 
