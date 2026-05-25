@@ -1,6 +1,20 @@
 const dotenv = require('dotenv');
 const path = require('path');
 
+// Monkey patch GoogleGenerativeAI to transparently map gemini-1.5-flash to gemini-flash-latest
+try {
+  const { GoogleGenerativeAI } = require('@google/generative-ai');
+  const originalGetGenerativeModel = GoogleGenerativeAI.prototype.getGenerativeModel;
+  GoogleGenerativeAI.prototype.getGenerativeModel = function(options, ...args) {
+    if (options && options.model === 'gemini-1.5-flash') {
+      options.model = 'gemini-flash-latest';
+    }
+    return originalGetGenerativeModel.call(this, options, ...args);
+  };
+} catch (e) {
+  // Silent fail if module isn't loaded/available in current scope
+}
+
 // Load env from project root
 try {
   dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
