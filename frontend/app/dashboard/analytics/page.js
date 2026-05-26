@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { api } from "@/lib/api";
 import {
   Area, AreaChart, Bar, BarChart,
   CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -14,11 +15,8 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       try {
-        const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/analytics/dashboard`, { credentials: "include", headers });
-        const statsData = await statsRes.json();
+        const statsData = await api.getDashboard();
         if (statsData.success && statsData.data) {
           setStats({
             totalViews: statsData.data.totalViews || 0,
@@ -28,8 +26,7 @@ export default function AnalyticsPage() {
           });
         }
 
-        const postsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts?status=published`, { credentials: "include", headers });
-        const postsData = await postsRes.json();
+        const postsData = await api.getPosts({ status: "published" });
         if (postsData.success && postsData.posts) {
           const sorted = [...postsData.posts].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 5);
           setTopPosts(sorted);

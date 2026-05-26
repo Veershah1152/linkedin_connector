@@ -505,7 +505,7 @@ export default function CareerDashboard() {
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 16px" }} className="animate-fade-in">
 
       {/* ═══ HEADER BANNER ═══ */}
-      <header style={{
+      <header className="hero-banner-inner" style={{
         background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)",
         borderRadius: T.radiusXl,
         padding: "28px 32px",
@@ -830,7 +830,7 @@ export default function CareerDashboard() {
                     </div>
 
                     {/* Matched vs Missing */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+                    <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
                       <div style={{ padding: 16, borderRadius: 12, background: T.successLight, border: `1px solid rgba(16,185,129,0.2)` }}>
                         <h4 style={{ fontSize: 11, fontWeight: 700, color: T.success, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>✅ Matched Keywords</h4>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -850,7 +850,7 @@ export default function CareerDashboard() {
                     </div>
 
                     {/* Weak Sections + Relevance */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+                    <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
                       <div>
                         <span style={labelStyle}>Weak Sections</span>
                         <div style={{ padding: 16, borderRadius: 12, background: T.secondary, border: `1px solid ${T.border}`, fontSize: 14, lineHeight: 1.6, color: T.fg }}>
@@ -948,7 +948,7 @@ export default function CareerDashboard() {
                           onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
                         />
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div className="mobile-grid-1" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <div>
                           <label style={labelStyle}>Issue Date</label>
                           <input 

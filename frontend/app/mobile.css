@@ -103,13 +103,11 @@
   }
   .mobile-bottom-nav { display: none !important; }
   .page-main { padding: 32px 28px !important; }
-  .mobile-grid-1 { grid-template-columns: unset !important; }
 }
 
 /* ═══════════════════════════════════════════
    GRIDS
    ═══════════════════════════════════════════ */
-.mobile-grid-1 { grid-template-columns: 1fr !important; }
 
 /* Stats: 2×2 on mobile → 4-col on sm */
 .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -277,6 +275,10 @@
 }
 
 @media (max-width: 767px) {
+  .mobile-grid-1 {
+    grid-template-columns: 1fr !important;
+  }
+
   :root {
     --resume-scale: calc((100vw - 32px) / 794);
   }

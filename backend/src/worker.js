@@ -340,7 +340,7 @@ app.get('/api/ai/history', authenticate, async (c) => {
 app.get('/api/analytics/dashboard', authenticate, async (c) => {
   try {
     const userContext = c.get('user');
-    const result = await analyticsService.getDashboardAnalytics(userContext.userId);
+    const result = await analyticsService.getDashboardStats(userContext.userId);
     return c.json({ success: true, data: result });
   } catch (error) {
     return c.json({ success: false, error: error.message }, 500);
@@ -362,7 +362,7 @@ app.get('/api/analytics/trends', authenticate, async (c) => {
   try {
     const userContext = c.get('user');
     const days = parseInt(c.req.query('days')) || 30;
-    const result = await analyticsService.getTrends(userContext.userId, days);
+    const result = await analyticsService.getEngagementTrends(userContext.userId, days);
     return c.json({ success: true, data: result });
   } catch (error) {
     return c.json({ success: false, error: error.message }, 500);
@@ -574,12 +574,12 @@ app.post('/api/career/certifications', authenticate, async (c) => {
       credentialUrl: formData.get('credentialUrl') || null,
     };
 
-    const cert = await certificationService.uploadAndCreateCertification(
+    const result = await certificationService.uploadCertification(
       userContext.userId,
       adaptedFile,
       details
     );
-    return c.json({ success: true, data: cert }, 201);
+    return c.json({ success: true, data: result.certification, sharingUrl: result.sharingUrl }, 201);
   } catch (error) {
     return c.json({ success: false, error: error.message }, 500);
   }
@@ -591,6 +591,17 @@ app.post('/api/career/certifications/:id/publish', authenticate, async (c) => {
     const id = c.req.param('id');
     const result = await certificationService.publishCertificationToLinkedIn(userContext.userId, id);
     return c.json({ success: true, data: result });
+  } catch (error) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+app.delete('/api/career/certifications/:id', authenticate, async (c) => {
+  try {
+    const userContext = c.get('user');
+    const id = c.req.param('id');
+    const result = await certificationService.deleteCertification(userContext.userId, id);
+    return c.json(result);
   } catch (error) {
     return c.json({ success: false, error: error.message }, 500);
   }
