@@ -166,7 +166,7 @@ function ResumePreviewContent() {
       {/* Screen UI */}
       <div className="mobile-stack preview-page-container" style={{ display: "flex", minHeight: "100vh", background: "#F8F9FC" }}>
         {/* Left Control Panel */}
-        <div className="mobile-w-full" style={{
+        <div className="preview-side-panel mobile-w-full" style={{
           width: 280,
           background: "#FFFFFF",
           borderRight: "1px solid #E5E7EB",
@@ -197,7 +197,7 @@ function ResumePreviewContent() {
           </button>
 
           {/* Resume info */}
-          <div>
+          <div className="preview-panel-section">
             <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Resume</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>{resume.title}</div>
             {resume.target_role && <div style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>🎯 {resume.target_role}</div>}
@@ -209,9 +209,9 @@ function ResumePreviewContent() {
           </div>
 
           {/* Template Selector */}
-          <div>
+          <div className="preview-panel-section">
             <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Template</div>
-            <div className="template-grid-mobile" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="template-grid-mobile preview-template-strip" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {TEMPLATES.map(tmpl => (
                 <button
                   key={tmpl.id}
@@ -253,7 +253,7 @@ function ResumePreviewContent() {
           </div>
 
           {/* Actions */}
-          <div className="actions-grid-mobile" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
+          <div className="actions-grid-mobile preview-actions-grid" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
             <button
               onClick={() => router.push(`/dashboard/career/editor?id=${resume.id}`)}
               className="btn-secondary"
@@ -280,7 +280,7 @@ function ResumePreviewContent() {
         </div>
 
         {/* Resume Preview Pane */}
-        <div ref={previewPanelRef} style={{
+        <div ref={previewPanelRef} className="preview-resume-pane" style={{
           flex: 1,
           overflow: "auto",
           padding: "24px 16px",

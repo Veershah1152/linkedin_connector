@@ -433,5 +433,161 @@
     width: 100% !important;
     justify-content: center !important;
   }
+
+  /* ═══════════════════════════════════════════
+     CAREER — BUILDER TAB: HEADER ROW
+     On mobile the title + version + editor link
+     wrap into two stacked rows.
+     ═══════════════════════════════════════════ */
+  .builder-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .builder-header-row .builder-header-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* ═══════════════════════════════════════════
+     CAREER TABS — icon-only on very narrow
+     ═══════════════════════════════════════════ */
+  .career-tabs-container button .tab-label {
+    display: none !important;
+  }
+  .career-tabs-container button {
+    flex: 1 !important;
+    padding: 10px 8px !important;
+    gap: 0 !important;
+    justify-content: center !important;
+  }
+  .career-tabs-container button .tab-emoji {
+    font-size: 16px !important;
+  }
+
+  /* ═══════════════════════════════════════════
+     CERTIFICATION CARDS — action row stacks
+     ═══════════════════════════════════════════ */
+  .cert-action-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .cert-action-row .cert-action-buttons {
+    width: 100% !important;
+  }
+  .cert-action-row .cert-action-buttons button {
+    flex: 1 !important;
+  }
+
+  /* ═══════════════════════════════════════════
+     BOTTOM RESUME ACTION BUTTONS
+     Full-width stacked column on mobile
+     ═══════════════════════════════════════════ */
+  .resume-bottom-actions {
+    flex-direction: column !important;
+  }
+  .resume-bottom-actions > * {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .resume-bottom-actions .resume-btn-group {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+  .resume-bottom-actions .resume-btn-group button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ═══════════════════════════════════════════
+     PREVIEW PAGE
+     ═══════════════════════════════════════════ */
+
+  /* Convert the 280px side panel to a sticky top bar */
+  .preview-side-panel {
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 12px 16px !important;
+    gap: 10px !important;
+    border-right: none !important;
+    border-bottom: 1px solid #E5E7EB !important;
+    overflow-y: visible !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 50 !important;
+    background: #fff !important;
+  }
+
+  /* Inside the side panel, hide description text to save space */
+  .preview-side-panel .preview-panel-section {
+    display: none !important;
+  }
+
+  /* Show only the template button strip + actions */
+  .preview-template-strip {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    flex: 1 !important;
+    scrollbar-width: none !important;
+  }
+  .preview-template-strip::-webkit-scrollbar { display: none !important; }
+  .preview-template-strip button {
+    flex: 0 0 auto !important;
+    padding: 6px 10px !important;
+    gap: 4px !important;
+    min-width: unset !important;
+    width: auto !important;
+  }
+  /* Hide description text inside template buttons */
+  .preview-template-strip button > div:last-child > div:last-child {
+    display: none !important;
+  }
+
+  /* Actions grid: 3 equal buttons in a row */
+  .preview-actions-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 6px !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+  }
+  .preview-actions-grid button {
+    flex: 1 !important;
+    padding: 8px 6px !important;
+    font-size: 12px !important;
+    justify-content: center !important;
+  }
+
+  /* Resume paper pane: take full width below the sticky header */
+  .preview-resume-pane {
+    padding: 12px 8px !important;
+    align-items: center !important;
+  }
+
+  /* Import modal: full-width on small screens */
+  .career-import-modal {
+    padding: 20px 16px !important;
+    border-radius: 16px !important;
+  }
+  .career-import-modal .modal-footer {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+  }
+  .career-import-modal .modal-footer button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* Show tab labels again on wider screens */
+@media (min-width: 641px) {
+  .career-tabs-container button .tab-label {
+    display: inline !important;
+  }
 }
 

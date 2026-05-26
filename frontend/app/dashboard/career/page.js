@@ -610,7 +610,8 @@ export default function CareerDashboard() {
                     onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.muted; }}}
                   >
                     <Icon size={16} />
-                    <span>{tab.emoji} {tab.label}</span>
+                    <span className="tab-emoji" style={{ marginRight: 4 }}>{tab.emoji}</span>
+                    <span className="tab-label">{tab.label}</span>
                   </button>
                 );
               })}
@@ -620,20 +621,20 @@ export default function CareerDashboard() {
             {activeTab === "builder" && (
               <div className="card-pad" style={cardStyleBase}>
                 {/* Header row */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 16, marginBottom: 20 }}>
+                <div className="builder-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 16, marginBottom: 20 }}>
                   <div>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg }}>Interactive Resume Info</h2>
-                    <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Changes are auto-saved to cloud draft instantly.</p>
+                    <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg }}>Resume Builder</h2>
+                    <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Auto-saved to cloud draft.</p>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div className="builder-header-actions" style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <span style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, background: T.secondary, color: T.muted, border: `1px solid ${T.border}` }}>
                       v{activeResume.version}
                     </span>
                     <button
                       onClick={() => router.push(`/dashboard/career/editor?id=${activeResume.id}`)}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: T.primary, background: "none", border: "none", cursor: "pointer" }}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: T.primary, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}
                     >
-                      <Wand2 size={14} /> Full Split Editor <ChevronRight size={12} />
+                      <Wand2 size={14} /> Split Editor <ChevronRight size={12} />
                     </button>
                   </div>
                 </div>
@@ -724,11 +725,11 @@ export default function CareerDashboard() {
                 )}
 
                 {/* Bottom actions */}
-                <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
+                <div className="resume-bottom-actions" style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
                   <button onClick={() => router.push(`/dashboard/career/editor?id=${activeResume.id}`)} style={{ ...btnPrimary, flex: "1 1 auto", justifyContent: "center" }}>
                     <Wand2 size={16} /> Split Screen Editor
                   </button>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flex: "1 1 auto" }}>
+                  <div className="resume-btn-group" style={{ display: "flex", gap: 8, flexWrap: "wrap", flex: "1 1 auto" }}>
                     <button onClick={() => router.push(`/dashboard/career/preview?id=${activeResume.id}`)} style={{ ...btnSecondary, flex: 1, justifyContent: "center" }}>
                       <Eye size={16} /> Preview
                     </button>
@@ -1012,7 +1013,7 @@ export default function CareerDashboard() {
                               <p style={{ fontSize: 12, color: T.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cert.issuing_organization} • {cert.issue_date || "Pending Date"}</p>
                             </div>
                           </div>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
+                          <div className="cert-action-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
                             {cert.file_url ? (
                               <a href={cert.file_url} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: T.primary, fontWeight: 500, textDecoration: "none" }}>
                                 <FileText size={14} /> View file
@@ -1020,7 +1021,7 @@ export default function CareerDashboard() {
                             ) : (
                               <span style={{ fontSize: 12, color: T.muted }}>Vault storage linked</span>
                             )}
-                            <div style={{ display: "flex", gap: 8 }}>
+                            <div className="cert-action-buttons" style={{ display: "flex", gap: 8 }}>
                               <button
                                 onClick={async () => {
                                   if (confirm(`Are you sure you want to delete certification "${cert.title}" from your vault?`)) {
