@@ -47,7 +47,6 @@ function ResumePreviewContent() {
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
   const [saving, setSaving] = useState(false);
-  const printRef = useRef(null);
   const id = searchParams.get("id");
 
   useEffect(() => {
@@ -143,7 +142,7 @@ function ResumePreviewContent() {
       </div>
 
       {/* Screen UI */}
-      <div className="mobile-stack" style={{ display: "flex", minHeight: "100vh", background: "#F8F9FC" }}>
+      <div className="mobile-stack preview-page-container" style={{ display: "flex", minHeight: "100vh", background: "#F8F9FC" }}>
         {/* Left Control Panel */}
         <div className="mobile-w-full" style={{
           width: 280,
@@ -190,7 +189,7 @@ function ResumePreviewContent() {
           {/* Template Selector */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 12 }}>Template</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div className="template-grid-mobile" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {TEMPLATES.map(tmpl => (
                 <button
                   key={tmpl.id}
@@ -232,13 +231,13 @@ function ResumePreviewContent() {
           </div>
 
           {/* Actions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
+          <div className="actions-grid-mobile" style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: "auto" }}>
             <button
               onClick={() => router.push(`/dashboard/career/editor?id=${resume.id}`)}
               className="btn-secondary"
               style={{ width: "100%", justifyContent: "center" }}
             >
-              ✏️ Edit Resume
+              ✏️ Edit
             </button>
             <button
               onClick={handleSaveTemplate}
@@ -246,14 +245,14 @@ function ResumePreviewContent() {
               className="btn-secondary"
               style={{ width: "100%", justifyContent: "center" }}
             >
-              {saving ? "💾 Saving..." : "💾 Save Template Choice"}
+              {saving ? "💾 Saving..." : "💾 Save"}
             </button>
             <button
               onClick={handlePrint}
               className="btn-primary"
               style={{ width: "100%", justifyContent: "center" }}
             >
-              🖨️ Export PDF
+              🖨️ Export
             </button>
           </div>
         </div>
@@ -276,9 +275,24 @@ function ResumePreviewContent() {
             <div style={{ fontSize: 12, color: "#6B7280" }}>A4 · 210mm × 297mm</div>
           </div>
 
-          {/* A4 Resume Render */}
-          <div className="mobile-scale-preview" style={{ transform: "scale(0.88)", transformOrigin: "top center", marginBottom: -100, boxShadow: "0 10px 25px rgba(0,0,0,0.05)" }}>
-            {renderTemplate()}
+          {/* A4 Resume Render container scaled mathematically to fit mobile viewports */}
+          <div style={{
+            height: "calc(1122.5px * var(--resume-scale))",
+            width: "calc(793.7px * var(--resume-scale))",
+            overflow: "hidden",
+            margin: "0 auto",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            borderRadius: 8
+          }}>
+            <div style={{
+              transform: "scale(var(--resume-scale))",
+              transformOrigin: "top left",
+              width: "210mm",
+              height: "297mm",
+              background: "#fff"
+            }}>
+              {renderTemplate()}
+            </div>
           </div>
         </div>
       </div>

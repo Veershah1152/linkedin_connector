@@ -537,37 +537,49 @@ function ResumeEditorContent() {
     <div className="mobile-stack" style={{ display: "flex", height: "100vh", overflow: "hidden", background: "#F8F9FC", color: "#111827", fontFamily: "Inter, sans-serif" }}>
 
       {/* Mobile-only Header */}
-      <div className="mobile-editor-header" style={{ display: "none" }}>
+      <div className="mobile-editor-header">
         <button 
           onClick={() => router.push("/dashboard/career")} 
           style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#6B7280", cursor: "pointer", fontSize: 13, fontWeight: 600, fontFamily: "inherit" }}
         >
           ← Back
         </button>
-        <div style={{ display: "flex", background: "#F3F4F6", borderRadius: 8, padding: 3, gap: 2 }}>
-          <button 
-            onClick={() => setMobileTab("edit")} 
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", background: "#F3F4F6", borderRadius: 8, padding: 3, gap: 2 }}>
+            <button 
+              onClick={() => setMobileTab("edit")} 
+              style={{
+                padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+                background: mobileTab === "edit" ? "#FFFFFF" : "transparent",
+                color: mobileTab === "edit" ? "#111827" : "#6B7280",
+                boxShadow: mobileTab === "edit" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                transition: "all 0.15s ease"
+              }}
+            >
+              Edit Form
+            </button>
+            <button 
+              onClick={() => setMobileTab("preview")} 
+              style={{
+                padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+                background: mobileTab === "preview" ? "#FFFFFF" : "transparent",
+                color: mobileTab === "preview" ? "#111827" : "#6B7280",
+                boxShadow: mobileTab === "preview" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                transition: "all 0.15s ease"
+              }}
+            >
+              Preview A4
+            </button>
+          </div>
+          <button
+            onClick={() => setShowChat(!showChat)}
             style={{
-              padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
-              background: mobileTab === "edit" ? "#FFFFFF" : "transparent",
-              color: mobileTab === "edit" ? "#111827" : "#6B7280",
-              boxShadow: mobileTab === "edit" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-              transition: "all 0.15s ease"
+              padding: "7px 12px", borderRadius: 8, border: "1px solid rgba(139, 92, 246, 0.3)",
+              background: showChat ? "rgba(139, 92, 246, 0.15)" : "rgba(139, 92, 246, 0.06)",
+              color: "#7C3AED", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit"
             }}
           >
-            Edit Form
-          </button>
-          <button 
-            onClick={() => setMobileTab("preview")} 
-            style={{
-              padding: "6px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
-              background: mobileTab === "preview" ? "#FFFFFF" : "transparent",
-              color: mobileTab === "preview" ? "#111827" : "#6B7280",
-              boxShadow: mobileTab === "preview" ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-              transition: "all 0.15s ease"
-            }}
-          >
-            Preview A4
+            🤖 AI
           </button>
         </div>
       </div>
@@ -1118,7 +1130,7 @@ function ResumeEditorContent() {
 
       {/* AI Assistant Glassmorphic Chat Panel */}
       {showChat && (
-        <div style={{
+        <div className="ai-chat-panel" style={{
           width: 360,
           background: "#FFFFFF",
           borderLeft: "1px solid #E5E7EB",
@@ -1253,7 +1265,7 @@ function ResumeEditorContent() {
 
 function EditorCard({ title, children }) {
   return (
-    <div className="card animate-fade-in" style={{
+    <div className="card animate-fade-in card-responsive" style={{
       padding: 32,
       marginBottom: 0,
       background: "#FFFFFF",

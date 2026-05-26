@@ -14,8 +14,10 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       try {
-        const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/analytics/dashboard`, { credentials: "include" });
+        const statsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/analytics/dashboard`, { credentials: "include", headers });
         const statsData = await statsRes.json();
         if (statsData.success && statsData.data) {
           setStats({
@@ -26,7 +28,7 @@ export default function AnalyticsPage() {
           });
         }
 
-        const postsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts?status=published`, { credentials: "include" });
+        const postsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts?status=published`, { credentials: "include", headers });
         const postsData = await postsRes.json();
         if (postsData.success && postsData.posts) {
           const sorted = [...postsData.posts].sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 5);

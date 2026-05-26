@@ -1,65 +1,151 @@
-# 🛠️ LinkForge AI — Ultimate LinkedIn Automation & Career Suite
+# 🛠️ Lyra Suite (LinkForge AI) — Ultimate LinkedIn Automation & Career SaaS
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](https://linkedin.com)
-[![Next.js 16](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)](https://nextjs.org)
-[![Express](https://img.shields.io/badge/Express-4.21-lightgrey?style=flat&logo=express)](https://expressjs.com)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=flat&logo=supabase)](https://supabase.com)
-[![AI Engine](https://img.shields.io/badge/xAI%20%2F%20Gemini-Llama--3%20%26%20Flash-orange)](https://x.ai)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](#)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black?style=flat&logo=next.js)](#)
+[![Express](https://img.shields.io/badge/Express-4.21-lightgrey?style=flat&logo=express)](#)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?style=flat&logo=supabase)](#)
+[![AI Engine](https://img.shields.io/badge/xAI%20%2F%20Gemini-Llama--3%20%26%20Flash-orange)](#)
 
-An AI-powered, multi-tenant SaaS application designed to streamline **LinkedIn content creation**, **post scheduling**, **analytics tracking**, and **career optimization** (Resume ATS parsing, version control, and LinkedIn certifications publishing).
+Lyra Suite (LinkForge AI) is a secure, multi-tenant SaaS application designed to unify **LinkedIn content marketing**, **post scheduling**, **engagement analytics**, and **career optimization** (including profile imports, A4 resume builders, real-time AI optimization, ATS keyword gap analysis, and LinkedIn certification vaults).
 
 ---
 
-## 🌟 Core Philosophy & Purpose: What LinkForge AI Stands For
+## 🌟 Core Philosophy: What Lyra Suite Solves
 
-Today, professional growth and career visibility are deeply intertwined. A stellar resume is less effective if you have no industry presence, and a high-profile industry presence won't translate to career growth if your professional credentials (resumes, certifications) fail to pass automated ATS checks or matching filters.
+In the modern professional landscape, career growth and personal branding are deeply interconnected. An outstanding resume is less effective if you have no industry presence, and a high-profile industry presence won't translate to career growth if your professional credentials (resumes, portfolios) fail to pass automated ATS filters or recruitment queries.
 
-**LinkForge AI** stands for bridging this gap by uniting **Content Authority** and **Career Readiness** into a single, unified, and secure workspace. It is built upon three core pillars:
+**Lyra Suite** bridges this gap by uniting **Content Authority** and **Career Readiness** into a single, unified, and secure workspace.
 
-1. **Integrated Career Synergy**: Rather than using disjointed tools (like Buffer for scheduling, ChatGPT for drafting, Jobscan for resume checks, and manually updating LinkedIn certs), LinkForge AI integrates the entire flow. It matches your actual career achievements to your content-creation drafts and verifies that both align with target industry profiles.
-2. **AI-Driven Empowerment**: Leveraging advanced LLMs (Grok/xAI and Gemini), LinkForge AI helps you optimize your career materials, detect structural resume deficiencies, extract metadata from uploaded PDF credentials, and schedule engaging posts at peak traffic times.
-3. **Data Security & Privacy**: Built on Supabase with strict Row-Level Security (RLS), LinkForge AI ensures that your draft content, resume revisions, ATS analysis history, and credential files remain private, encrypted, and isolated to your specific account.
+### 💡 How It Is Helpful
+* **Saves Hundreds of Hours**: Rather than context-switching between disjointed tools (like Buffer for scheduling, external LLM chats for copywriting, external sites for resume analysis, and manually filling LinkedIn forms), Lyra Suite handles the entire flow.
+* **Intelligent Profile Bootstrapping**: Syncs directly with your LinkedIn profile to automatically extract and populate resume skeletons, saving you from manual data entry.
+* **Bypasses Automatic Filters**: Translates plain experience statements into powerful, quantitative STAR-method achievements, matching relevant keywords to beat automated HR screening bots.
+* **Zero-Friction Credential Shares**: Stores certification credentials securely on the cloud and generates customized LinkedIn add-profile shortcuts.
 
-By removing the friction of manual posting, resume formatting, and credential publishing, LinkForge AI enables creators, job seekers, and industry leaders to focus on what truly matters: **sharing authentic knowledge, building networks, and scaling their careers.**
+### 📈 What It Will Improve
+1. **Audience Reach & Brand Authority**: Regular publishing at optimized intervals boosts your ranking on the LinkedIn algorithm, increasing organic visibility and networking opportunities.
+2. **Resume Match Rates**: Optimizing resume keywords against target job descriptions raises ATS grades from "Unfavorable" to "Elite Compatibility."
+3. **Data Security & Isolation**: Fully sandboxed drafts, version histories, and documents isolated per tenant utilizing Supabase RLS (Row-Level Security) ensure absolute confidentiality.
 
 ---
 
 ## 🚀 Key Modules & Features
 
 ### 1. ✍️ Content & Scheduling Suite
-* **AI Post Generator**: Leverage advanced LLMs (Grok/xAI, Gemini) to craft high-converting LinkedIn posts, write-ups, or hooks based on custom prompts.
-* **Smart Queue & Scheduler**: Plan, queue, and schedule posts for optimal times. Driven by **Bull Queue** and **Redis** for robust background job execution.
-* **Analytics Dashboard**: Get detailed metrics on post engagement, impressions, and performance over time using dynamic **Recharts** visualizations.
+* **AI Post Generator**: Leverages `llama-3.3-70b-versatile` to craft highly-engaging LinkedIn posts based on custom tone, length, and industry guidelines.
+* **Smart Queue & Scheduler**: Plan, reschedule, queue, and manage posts. Backed by **Bull Queue** and **Redis** for robust, non-blocking background task executions.
+* **Engagement Analytics**: Gain visual clarity on performance over time (likes, impressions, and click patterns) using dynamic **Recharts** charts.
 
 ### 2. 💼 Career & Resume Optimization Suite
-* **LinkedIn Profile Sync**: Instantly import your profile details to bootstrap a professional resume template.
-* **ATS Scoring & Audit**: Run an automated ATS compatibility check using AI. Identifies weak areas, detects missing/recommended keywords, and provides clear suggestions for target roles.
-* **Resume Version Control**: Automatically saves snapshots on every edit. Tracks improvements, ATS scores, and target roles dynamically over time.
-* **Smart Resume Optimizer**: Tailor bullet points, achievements, and professional summaries using **Groq AI (Llama 3.3)** to align with specific target roles.
+* **LinkedIn Profile Sync**: Instantly parse profile exports and CVs, merging details into a primary resume document.
+* **ATS Scoring & Audit**: Run an automated ATS compatibility check using AI. Detects missing keywords, identifies formatting/content bottlenecks, and suggests action points.
+* **Resume Version Control**: Automatically saves document snapshots on every edit. Tracks improvements, version changes, and target roles dynamically over time.
+* **STAR-Method Optimizer**: Refines summaries and formats bullet points using the Situation, Task, Action, Result (STAR) methodology.
 * **Certification Vault & Sync**: Upload certifications (images/PDFs) with automatic metadata extraction. Generates pre-filled share URLs to seamlessly publish credentials to your LinkedIn profile.
+
+### 3. 📱 Premium Mobile Responsive Workspace
+* **Dynamic A4 Scaling**: Resumes scale down mathematically on mobile viewports using CSS variable properties to prevent horizontal scrolling or layouts overflowing the screen.
+* **Swipeable Tab Navigation**: Section tabs in the Career Hub scroll horizontally in a native-app style scroller.
+* **Compact Controls**: Action buttons and template selectors are rendered in tight mobile grids (e.g. 2x2 grids and horizontal rows) to maximize vertical content space.
+* **Slide-over AI Chat Panel**: The AI Strategist interface slides out from the right edge as a fixed overlay drawer on mobile rather than stacking at the bottom.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## 🛠️ Tech Stack & System Architecture
 
-### **Frontend**
-* **Framework**: Next.js 16 (App Router)
-* **Styling**: Tailwind CSS v4 + Vanilla CSS Variables (Forced Light Theme)
-* **Visuals**: Lucide Icons & Recharts
+The platform is designed to run locally on a Node.js Express server or scale serverless globally on the Cloudflare Edge runtime (V8 engine).
 
-### **Backend**
-* **Runtime**: Node.js & Express.js
-* **Queues / Cron**: Bull (Redis-backed) & Node-Cron
-* **Validation**: Zod (Runtime type safety)
-* **API Security**: Helmet, Express Rate Limit, JWT-based Route Guarding
+```mermaid
+graph TD
+    Client[Next.js Client Application] <-->|HTTPS / JSON / JWT| API[Express API / Cloudflare Hono]
+    API <-->|Admin Client / RLS Bypass| DB[(Supabase PostgreSQL Database)]
+    API <-->|Official HTTP OAuth / SDK| LinkedIn[LinkedIn OAuth & API Endpoints]
+    API <-->|Groq SDK| Groq[Groq AI llama-3.3-70b-versatile]
+    API <-->|Multer / SDK| S3[Supabase Storage Buckets]
+```
 
-### **Database & Services**
-* **Database**: Supabase PostgreSQL
-* **Security**: Row-Level Security (RLS) policies per user
-* **AI Engines**:
-  * **Groq SDK** (`llama-3.3-70b-versatile` / `llama3-8b-8192`)
-  * **Gemini SDK** (Multimodal / OCR / Document Parsing)
-* **Storage**: Supabase Storage Buckets for resumes and certification media
+### **Database ER Diagram**
+All transactions and entities enforce structural referential integrity linked directly to the parent `users` table:
+
+```mermaid
+erDiagram
+    users ||--o{ resumes : creates
+    resumes ||--o{ resume_versions : saves
+    resumes ||--o{ ats_analyses : analyses
+    users ||--o{ certifications_uploads : uploads
+
+    users {
+        uuid id PK
+        varchar linkedin_id
+        varchar email
+        varchar full_name
+        text profile_image_url
+        text linkedin_access_token
+        timestamptz linkedin_token_expires_at
+    }
+
+    resumes {
+        uuid id PK
+        uuid user_id FK
+        varchar title
+        varchar target_role
+        varchar template_id
+        jsonb contact_info
+        text summary
+        text[] skills
+        jsonb projects
+        jsonb work_experience
+        jsonb education
+        jsonb certifications
+        text[] achievements
+        jsonb social_links
+        varchar status
+        boolean is_optimized
+        integer ats_score
+        integer version
+        jsonb raw_linkedin_data
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    resume_versions {
+        uuid id PK
+        uuid resume_id FK
+        integer version
+        jsonb content
+        integer ats_score
+        varchar target_role
+        timestamptz created_at
+    }
+
+    ats_analyses {
+        uuid id PK
+        uuid resume_id FK
+        varchar target_role
+        integer score
+        jsonb keyword_analysis
+        text[] weak_sections
+        text relevance_analysis
+        jsonb formatting_analysis
+        text[] suggestions
+        timestamptz created_at
+    }
+
+    certifications_uploads {
+        uuid id PK
+        uuid user_id FK
+        varchar title
+        varchar issuing_organization
+        date issue_date
+        varchar credential_id
+        text credential_url
+        text file_url
+        varchar status
+        jsonb publish_payload
+        timestamptz created_at
+        timestamptz updated_at
+    }
+```
 
 ---
 
@@ -67,13 +153,13 @@ By removing the friction of manual posting, resume formatting, and credential pu
 
 ```
 linkedin_connector/
-├── backend/                  # Node.js + Express API Server
+├── backend/                  # Node.js + Express API Server / Cloudflare Worker
 │   ├── src/
 │   │   ├── config/           # Supabase & Env configurations
 │   │   ├── middleware/       # JWT Auth & Zod Schema Validation
 │   │   ├── routes/           # Router groups (auth, posts, career, etc.)
 │   │   ├── services/         # Core business logic (ATS, Resume, Queues)
-│   │   └── server.js         # Express App entrypoint
+│   │   └── worker.js         # Cloudflare Worker Entrypoint (Hono app)
 │   └── package.json
 ├── frontend/                 # Next.js 16 Web Application
 │   ├── app/                  # App Router Pages (dashboard, career, posts, etc.)
@@ -81,157 +167,98 @@ linkedin_connector/
 │   ├── lib/                  # Shared API/Fetch helpers
 │   └── package.json
 ├── supabase/
-│   └── migrations/           # Database schema files
+│   └── migrations/           # Database schema migration files
 ├── .env.example              # Global environment template
 └── README.md
 ```
 
 ---
 
-## 🚦 Getting Started
+## 🚦 Getting Started (Local Development)
 
 ### 📋 Prerequisites
-Make sure you have the following installed locally:
 * **Node.js** (v18 or higher)
 * **Redis Server** (required for post scheduling queues; runs on `6379` by default)
-* **Supabase CLI** (optional, or a Supabase cloud project)
+* **Supabase** Project (either local instance or cloud hosted database)
 
----
-
-### ⚙️ Step 1: Environment Variables Setup
+### ⚙️ Step 1: Environment Configuration
 Copy the template `.env.example` to `.env` in the root folder:
 ```bash
 cp .env.example .env
 ```
-Fill out the required API keys:
-* **Supabase**: `SUPABASE_URL` and keys for database connection.
-* **LinkedIn Developer App**: Client ID, Client Secret, and redirect URI for OAuth authentication.
+Fill out the required API credentials:
+* **Supabase**: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+* **LinkedIn OAuth**: `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, and `LINKEDIN_REDIRECT_URI`.
 * **AI Providers**: `GROK_API_KEY` (xAI) and `GEMINI_API_KEY` (Google AI).
-* **Redis**: Your Redis URL (e.g., `redis://localhost:6379`).
 
----
-
-### 🗄️ Step 2: Database Migration
-Go to your Supabase SQL Editor and execute the SQL file:
+### 🗄️ Step 2: Database Setup
+Apply the schema migration to your Supabase instance:
 ```bash
 supabase/migrations/001_initial_schema.sql
 ```
-This sets up tables for `users`, `posts`, `resumes`, `resume_versions`, `ats_analyses`, and `certifications_uploads`, along with Row-Level Security (RLS) policies.
+This script creates tables, configures indexes, and sets up Postgres Row-Level Security (RLS) policies.
 
----
+### 📦 Step 3: Installation & Execution
 
-### 📦 Step 3: Installation & Dev Server
-
-Open two terminals to run the backend and frontend simultaneously:
-
-#### Terminal 1: Backend
+#### Terminal 1: Backend Server
 ```bash
 cd backend
 npm install
 npm run dev
 ```
-*API will run at http://localhost:5000*
-*Health Check: http://localhost:5000/api/health*
+*API server runs at http://localhost:5000*
 
-#### Terminal 2: Frontend
+#### Terminal 2: Frontend Web App
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-*Web App will run at http://localhost:3000*
+*Web application runs at http://localhost:3000*
 
 ---
 
-## 🔌 API Documentation Summary
+## ☁️ Cloudflare Edge Deployment (Production Edge Setup)
 
-### 🔐 Authentication
-* `GET /api/auth/linkedin` - Generates and redirects to LinkedIn OAuth flow.
-* `GET /api/auth/linkedin/callback` - OAuth callback handler; exchanges code for tokens, signs user JWT.
-* `GET /api/auth/me` - Fetches authenticated user info.
+For production, the application is designed to compile directly into a serverless **Cloudflare Edge Worker** and **Cloudflare Pages** site to eliminate cold starts and scale globally.
 
-### 📝 Posts & Scheduling
-* `POST /api/posts` - Create/Schedule a post.
-* `GET /api/posts` - Fetch current user's posts.
-* `DELETE /api/posts/:id` - Remove scheduled post.
-* `POST /api/ai/generate` - AI post generation.
-
-### 💼 Career & Resumes
-* `GET /api/career/import` - Sync data from LinkedIn profile.
-* `POST /api/career/resumes` - Create resume.
-* `PATCH /api/career/resumes/:id` - Edit resume (creates version history).
-* `POST /api/career/resumes/:id/optimize` - AI resume optimization based on target job description.
-* `POST /api/career/resumes/:id/ats` - Perform ATS analysis & scoring.
-* `POST /api/career/certifications` - Upload credential (image/PDF) & get pre-filled LinkedIn publishing link.
-
----
-
-## 🔒 Security & Row Level Isolation
-All transactions explicitly pass the authenticated user's ID verifying data ownership via Supabase RLS. No user can view or update another user's posts, resumes, analyses, or certifications.
-
----
-
-## ☁️ Cloudflare Serverless Deployment (Production Edge Setup)
-
-For production, the application is designed to be fully compatible with the serverless **Cloudflare V8 Edge Runtime** (offering minimal latency, global scale, and 0ms cold starts).
-
-### 🚀 Production URLs
-* **Frontend (Cloudflare Pages)**: [https://linkedin-connector-frontend.pages.dev](https://linkedin-connector-frontend.pages.dev)
-* **Backend (Cloudflare Workers)**: `https://linkedin-connector-backend.your-subdomain.workers.dev`
-
-### ⚙️ Serverless Architecture Optimizations
-To compile and run within V8 Edge Workers, several key modifications were introduced:
-1. **Gemini 1.5 Flash Document Processing**: Removed native Node.js binaries/filesystem dependencies (`pdf-parse` and C++ compiled `tesseract.js` OCR) and replaced them with direct, lightweight multimodal **Gemini 1.5 Flash** API calls. This handles text extraction and image/scanned document OCR instantly.
-2. **Transparent Environment Proxy**: Wrapped database clients and global configuration in Javascript `Proxy` instances. On initial load, clients are initialized lazily; on incoming requests, the environment parameters are transparently fetched from the runtime request context (`c.env`).
-3. **Cross-Domain Token Authentication**: Modern browsers block third-party cookies across differing domains (`pages.dev` to `workers.dev`). To bypass this, the backend callback redirect passes tokens via query parameters (`accessToken` & `refreshToken`) which the frontend securely extracts, cleanses from the address bar (via `window.history.replaceState`), stores in `localStorage`, and sends via the `Authorization: Bearer <token>` header on subsequent requests.
+### **Production Architecture Optimizations**
+1. **Gemini 1.5 Flash Document Processing**: Removed native Node.js binaries (`pdf-parse` and tesseract compiled OCR libraries) and replaced them with direct, lightweight multimodal **Gemini 1.5 Flash** API calls. This enables document extraction and OCR directly on the serverless edge.
+2. **Transparent Environment Proxy**: Wrapped database clients and global configuration in Javascript `Proxy` instances. Clients are initialized lazily inside the Cloudflare Worker request context (`c.env`) dynamically.
+3. **Cross-Domain Token Authentication**: Standard browsers block third-party cookies across differing domains (`pages.dev` to `workers.dev`). To bypass this, the backend OAuth redirect passes tokens via query parameters (`accessToken` & `refreshToken`) which the frontend securely extracts, cleanses from the address bar (via `window.history.replaceState`), stores in `localStorage`, and sends via the `Authorization: Bearer <token>` header on subsequent requests.
 4. **Hono Router**: The Worker is powered by a high-performance **Hono** router ([worker.js](file:///c:/veer/project/linkedin_connector/backend/src/worker.js)) handling request routing and multipart/form-data buffering transparently.
 
----
-
-### 📦 How to Deploy
+### 🚀 Production Deployment Commands
 
 #### 1. Deploy the Backend Worker
-1. Go to the `backend` directory.
-2. Edit [wrangler.toml](file:///c:/veer/project/linkedin_connector/backend/wrangler.toml) to configure bindings:
-   ```toml
-   [vars]
-   SUPABASE_URL = "https://your-supabase-project.supabase.co"
-   CLIENT_URL = "https://linkedin-connector-frontend.pages.dev"
-   GROQ_API_URL = "https://api.groq.com"
-   LINKEDIN_CLIENT_ID = "your-linkedin-client-id"
-   LINKEDIN_REDIRECT_URI = "https://linkedin-connector-backend.your-subdomain.workers.dev/api/auth/linkedin/callback"
-   ```
-3. Set your production secrets securely:
+1. Configure bindings in `backend/wrangler.toml` using placeholder URLs for production.
+2. Set production secrets in wrangler:
    ```bash
-   echo "your-supabase-service-role-key" | npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
-   echo "your-groq-api-key" | npx wrangler secret put GROQ_API_KEY
-   echo "your-gemini-api-key" | npx wrangler secret put GEMINI_API_KEY
-   echo "your-jwt-secret" | npx wrangler secret put JWT_SECRET
-   echo "your-linkedin-client-secret" | npx wrangler secret put LINKEDIN_CLIENT_SECRET
+   npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+   npx wrangler secret put GROQ_API_KEY
+   npx wrangler secret put GEMINI_API_KEY
+   npx wrangler secret put JWT_SECRET
+   npx wrangler secret put LINKEDIN_CLIENT_SECRET
    ```
-4. Deploy to Cloudflare Workers:
+3. Deploy:
    ```bash
+   cd backend
    npx wrangler deploy
    ```
 
 #### 2. Deploy the Frontend Pages
-1. Go to the `frontend` directory.
-2. Ensure [next.config.mjs](file:///c:/veer/project/linkedin_connector/frontend/next.config.mjs) is configured for static export:
-   ```javascript
-   const nextConfig = {
-     output: 'export',
-     images: { unoptimized: true }
-   };
-   ```
-3. Configure `frontend/.env.local` to point to the deployed Worker endpoint:
-   ```text
-   NEXT_PUBLIC_API_URL=https://linkedin-connector-backend.your-subdomain.workers.dev
-   ```
-4. Run Next.js static build to generate the output folder:
+1. Configure `frontend/.env.local` to point to the deployed Worker endpoint.
+2. Build the Next.js static output:
    ```bash
+   cd frontend
    npm run build
    ```
-5. Deploy static assets to Cloudflare Pages:
+3. Deploy to Pages:
    ```bash
-   npx wrangler pages deploy
+   npx wrangler pages deploy out --project-name linkedin-connector-frontend
    ```
+
+---
+
+## 🔒 Security & Data Privacy
+All database transactions are guarded by Supabase RLS. The backend verifies the user ID extracted from JWT tokens, ensuring that no tenant can read, modify, or delete another user's draft content, resume edits, certifications, or ATS analysis logs.

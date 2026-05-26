@@ -18,15 +18,11 @@ import {
   Eye,
   ExternalLink,
   Printer,
-  Cloud,
-  CloudCheck,
   Wand2,
   ShieldCheck,
   Award,
   ChevronRight,
-  TrendingUp,
-  History,
-  LayoutGrid
+  History
 } from "lucide-react";
 
 /* ─── Design Tokens (forced light, matching layout.js) ─── */
@@ -79,12 +75,11 @@ const TARGET_ROLES = [
 ];
 
 /* ─── Reusable style objects ─── */
-const cardStyle = {
+const cardStyleBase = {
   background: T.cardBg,
   border: `1px solid ${T.border}`,
   borderRadius: T.radiusLg,
   boxShadow: T.shadow,
-  padding: 24,
 };
 
 const labelStyle = {
@@ -150,14 +145,12 @@ export default function CareerDashboard() {
   const [certifications, setCertifications] = useState([]);
   const [selectedRole, setSelectedRole] = useState(TARGET_ROLES[2]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [atsReport, setAtsReport] = useState(null);
   const [versions, setVersions] = useState([]);
   const [activeTab, setActiveTab] = useState("builder");
-  const [showCompletionBanner, setShowCompletionBanner] = useState(false);
 
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [parsingProfile, setParsingProfile] = useState(false);
@@ -548,7 +541,7 @@ export default function CareerDashboard() {
           </p>
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, position: "relative", zIndex: 1 }}>
+        <div className="career-header-actions" style={{ display: "flex", flexWrap: "wrap", gap: 10, position: "relative", zIndex: 1 }}>
           <button
             onClick={() => setShowSyncModal(true)}
             disabled={parsingProfile || creating}
@@ -567,7 +560,7 @@ export default function CareerDashboard() {
           </button>
           <button
             onClick={handleCreateManualResume}
-            disabled={syncing || creating}
+            disabled={parsingProfile || creating}
             style={{
               ...btnSecondary,
               background: "#FFFFFF",
@@ -590,7 +583,7 @@ export default function CareerDashboard() {
           {/* ═══ MAIN WORKSPACE ═══ */}
           <div>
             {/* Tab Navigation */}
-            <div style={{
+            <div className="career-tabs-container" style={{
               display: "flex", gap: 4, padding: 4,
               background: T.cardBg, border: `1px solid ${T.border}`,
               borderRadius: T.radius, marginBottom: 24,
@@ -625,7 +618,7 @@ export default function CareerDashboard() {
 
             {/* ─── TAB: BUILDER ─── */}
             {activeTab === "builder" && (
-              <div style={cardStyle}>
+              <div className="card-pad" style={cardStyleBase}>
                 {/* Header row */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 16, marginBottom: 20 }}>
                   <div>
@@ -741,7 +734,7 @@ export default function CareerDashboard() {
 
             {/* ─── TAB: AI OPTIMIZE ─── */}
             {activeTab === "optimize" && (
-              <div style={cardStyle}>
+              <div className="card-pad" style={cardStyleBase}>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg, marginBottom: 4 }}>AI-Powered Resume Optimization</h2>
                 <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 20 }}>
                   Align your achievements and technical competencies with the target role. Our AI engine writes quantitative STAR bullet outcomes.
@@ -773,7 +766,7 @@ export default function CareerDashboard() {
 
             {/* ─── TAB: ATS SCAN ─── */}
             {activeTab === "ats" && (
-              <div style={cardStyle}>
+              <div className="card-pad" style={cardStyleBase}>
                 <h2 style={{ fontSize: 18, fontWeight: 700, color: T.fg, marginBottom: 4 }}>ATS Score & Gap Analyzer</h2>
                 <p style={{ fontSize: 14, color: T.muted, lineHeight: 1.6, marginBottom: 20 }}>
                   Check alignment with target roles. Map keywords, identify missing sections, and bypass robotic filters.
@@ -898,7 +891,7 @@ export default function CareerDashboard() {
                     onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setCertFile(f); }}
                     onClick={() => document.getElementById("cert-upload-input")?.click()}
                     style={{
-                      ...cardStyle,
+                      ...cardStyleBase,
                       borderStyle: "dashed",
                       borderWidth: 2,
                       borderColor: T.border,
@@ -917,7 +910,7 @@ export default function CareerDashboard() {
                   </div>
 
                   {/* Details Form */}
-                  <div style={cardStyle}>
+                  <div className="card-pad" style={cardStyleBase}>
                     <h3 style={{ fontWeight: 700, fontSize: 14, color: T.fg, marginBottom: 16 }}>Extracted Metadata</h3>
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <div>
@@ -953,13 +946,13 @@ export default function CareerDashboard() {
                 <div>
                   <h3 style={{ fontWeight: 700, fontSize: 14, color: T.fg, marginBottom: 12 }}>Your Credentials ({certifications.length})</h3>
                   {certifications.length === 0 ? (
-                    <div style={{ ...cardStyle, textAlign: "center", padding: 32, color: T.muted, fontSize: 14 }}>
+                    <div className="card-pad" style={{ ...cardStyleBase, textAlign: "center", padding: 32, color: T.muted, fontSize: 14 }}>
                       No certifications uploaded to vault yet.
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {certifications.map(cert => (
-                        <div key={cert.id} style={cardStyle}>
+                        <div key={cert.id} className="card-pad" style={cardStyleBase}>
                           <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                             <div style={{ width: 40, height: 40, borderRadius: 10, background: T.primaryLight, border: `1px solid ${T.primaryMedium}`, color: T.primary, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                               <Award size={20} />
@@ -1004,7 +997,7 @@ export default function CareerDashboard() {
           <aside style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Resume Selector */}
             {resumes.length > 1 && (
-              <div style={cardStyle}>
+              <div className="card-pad" style={cardStyleBase}>
                 <label style={labelStyle}>Active Resume</label>
                 <select
                   value={activeResume?.id || ""}
@@ -1024,7 +1017,7 @@ export default function CareerDashboard() {
             )}
 
             {/* Template Chooser */}
-            <div style={cardStyle}>
+            <div className="card-pad" style={cardStyleBase}>
               <label style={labelStyle}>A4 Layout Template</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
                 {TEMPLATE_OPTIONS.map(tmpl => {
@@ -1061,7 +1054,7 @@ export default function CareerDashboard() {
             </div>
 
             {/* Profile Completion */}
-            <div style={cardStyle}>
+            <div className="card-pad" style={cardStyleBase}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600, color: T.muted }}>Profile Strength</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: T.primary }}>{getProfileCompletion()}%</span>
@@ -1076,7 +1069,7 @@ export default function CareerDashboard() {
 
             {/* Version History */}
             {versions.length > 0 && (
-              <div style={cardStyle}>
+              <div className="card-pad" style={cardStyleBase}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: T.fg, display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
                   <History size={16} color={T.primary} /> Version History
                 </h3>
@@ -1108,10 +1101,10 @@ export default function CareerDashboard() {
         </div>
       ) : (
         /* ═══ EMPTY STATE ═══ */
-        <div style={{
-          ...cardStyle,
+        <div className="card-pad" style={{
+          ...cardStyleBase,
           maxWidth: 520, margin: "0 auto",
-          textAlign: "center", padding: 48,
+          textAlign: "center",
           borderRadius: T.radiusXl,
           boxShadow: T.shadowGlow,
         }}>

@@ -5,6 +5,7 @@ import { CalendarOff, Rocket, Clock, CalendarRange, X, Calendar, ChevronRight } 
 
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const authHdr = () => { const t = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null; return t ? { Authorization: `Bearer ${t}` } : {}; };
 
 export default function SchedulePage() {
   const [scheduledPosts, setScheduledPosts] = useState([]);
@@ -16,7 +17,7 @@ export default function SchedulePage() {
   const fetchScheduledPosts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/posts?status=scheduled`, { credentials: "include" });
+      const res = await fetch(`${API}/api/posts?status=scheduled`, { credentials: "include", headers: authHdr() });
       const data = await res.json();
       if (data.success) setScheduledPosts(data.posts || []);
     } catch (err) {
@@ -58,7 +59,12 @@ export default function SchedulePage() {
     if (!confirm("Cancel this schedule?")) return;
     setModalLoading(true);
     try {
-      const res = await fetch(`${API}/api/posts/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ status: "draft", scheduledAt: null }) });
+      const res = await fetch(`${API}/api/posts/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHdr() },
+        credentials: "include",
+        body: JSON.stringify({ status: "draft", scheduledAt: null })
+      });
       const data = await res.json();
       if (data.success) { setOpenPostId(null); fetchScheduledPosts(); }
     } finally { setModalLoading(false); }
@@ -68,7 +74,7 @@ export default function SchedulePage() {
     if (!confirm("Publish now?")) return;
     setModalLoading(true);
     try {
-      const res = await fetch(`${API}/api/posts/${id}/publish`, { method: "POST", credentials: "include" });
+      const res = await fetch(`${API}/api/posts/${id}/publish`, { method: "POST", credentials: "include", headers: authHdr() });
       const data = await res.json();
       if (data.success) { setOpenPostId(null); fetchScheduledPosts(); alert("Published!"); }
     } finally { setModalLoading(false); }
@@ -79,7 +85,12 @@ export default function SchedulePage() {
     setModalLoading(true);
     try {
       const isoString = new Date(rescheduleTime).toISOString();
-      const res = await fetch(`${API}/api/posts/${activePost.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ status: "scheduled", scheduledAt: isoString }) });
+      const res = await fetch(`${API}/api/posts/${activePost.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHdr() },
+        credentials: "include",
+        body: JSON.stringify({ status: "scheduled", scheduledAt: isoString })
+      });
       const data = await res.json();
       if (data.success) { setOpenPostId(null); fetchScheduledPosts(); alert("Rescheduled!"); }
     } finally { setModalLoading(false); }

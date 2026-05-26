@@ -19,6 +19,7 @@
 .mobile-sidebar.open { transform: translateX(0) !important; }
 .mobile-content { margin-left: 0 !important; }
 .mobile-header-padding { padding-left: 16px !important; padding-right: 16px !important; }
+.mobile-editor-header { display: none; }
 
 /* ─── Page content: reserve space for bottom nav ─── */
 .page-main { padding: 20px 16px 88px 16px !important; }
@@ -102,7 +103,7 @@
   }
   .mobile-bottom-nav { display: none !important; }
   .page-main { padding: 32px 28px !important; }
-  .mobile-grid-1 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important; }
+  .mobile-grid-1 { grid-template-columns: unset !important; }
 }
 
 /* ═══════════════════════════════════════════
@@ -333,4 +334,102 @@
     height: auto !important;
     overflow-y: visible !important;
   }
+
+  .mobile-editor-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E5E7EB;
+    position: sticky;
+    top: 0;
+    z-index: 150;
+  }
+
+  .mobile-w-full {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid #E5E7EB !important;
+  }
+
+  .career-tabs-container {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    padding: 4px !important;
+  }
+  .career-tabs-container::-webkit-scrollbar {
+    display: none !important;
+  }
+  .career-tabs-container button {
+    flex: 0 0 auto !important;
+    padding: 10px 16px !important;
+  }
+
+  .actions-grid-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-top: 16px !important;
+  }
+  .actions-grid-mobile button {
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .template-grid-mobile {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .card-responsive {
+    padding: 16px !important;
+  }
+
+  .ai-chat-panel {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 90% !important;
+    max-width: 360px !important;
+    height: 100% !important;
+    z-index: 250 !important;
+    border-left: none !important;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.2) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
 }
+
+.preview-page-container {
+  --resume-scale: 0.88;
+}
+
+@media (max-width: 767px) {
+  .preview-page-container {
+    --resume-scale: calc((100vw - 32px) / 794) !important;
+  }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 640px) {
+  .career-header-actions {
+    width: 100% !important;
+    flex-direction: column !important;
+  }
+  .career-header-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+

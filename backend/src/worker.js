@@ -258,9 +258,18 @@ app.post('/api/posts/:id/images', authenticate, async (c) => {
     const userContext = c.get('user');
     const id = c.req.param('id');
     const formData = await c.req.formData();
-    const imageFiles = formData.getAll('image');
+
+    // Frontend sends multiple files under 'images' (plural)
+    const imageFiles = formData.getAll('images');
     
-    const keepImageIds = formData.getAll('keepImageIds') || [];
+    // keepImageIds is sent as a JSON string: JSON.stringify([...])
+    const keepImageIdsRaw = formData.get('keepImageIds');
+    let keepImageIds = [];
+    try {
+      keepImageIds = keepImageIdsRaw ? JSON.parse(keepImageIdsRaw) : [];
+    } catch {
+      keepImageIds = [];
+    }
     
     const adaptedFiles = [];
     for (const f of imageFiles) {

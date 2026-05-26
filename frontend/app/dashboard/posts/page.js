@@ -7,6 +7,8 @@ import { Search, Trash2, CalendarOff, Rocket, Edit3, Linkedin, FileText, ImageIc
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const STATUSES = ["all", "draft", "scheduled", "published", "failed"];
 const SOURCES = ["all", "manual", "ai"];
+const getToken = () => typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+const authHdr = () => { const t = getToken(); return t ? { Authorization: `Bearer ${t}` } : {}; };
 
 const STATUS_CONFIG = {
   published: { label: "Published", bg: "#ECFDF5", color: "#065F46", dot: "#10B981" },
@@ -30,7 +32,7 @@ export default function PostsPage() {
     setLoading(true);
     try {
       const url = statusFilter !== "all" ? `${API}/api/posts?status=${statusFilter}` : `${API}/api/posts`;
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(url, { credentials: "include", headers: authHdr() });
       const data = await res.json();
       if (data.success) setPosts(data.posts || []);
     } catch (err) {
@@ -71,7 +73,7 @@ export default function PostsPage() {
   const handleBulkDelete = async () => {
     if (!selectedIds.size || !confirm(`Delete ${selectedIds.size} selected posts?`)) return;
     setBulkLoading(true);
-    await Promise.all(Array.from(selectedIds).map((id) => fetch(`${API}/api/posts/${id}`, { method: "DELETE", credentials: "include" })));
+    await Promise.all(Array.from(selectedIds).map((id) => fetch(`${API}/api/posts/${id}`, { method: "DELETE", credentials: "include", headers: authHdr() })));
     setSelectedIds(new Set()); fetchPosts();
     setBulkLoading(false);
   };
@@ -80,7 +82,7 @@ export default function PostsPage() {
     if (!selectedIds.size || !confirm(`Unschedule ${selectedIds.size} posts?`)) return;
     setBulkLoading(true);
     await Promise.all(Array.from(selectedIds).map((id) =>
-      fetch(`${API}/api/posts/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ status: "draft", scheduledAt: null }) })
+      fetch(`${API}/api/posts/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHdr() }, credentials: "include", body: JSON.stringify({ status: "draft", scheduledAt: null }) })
     ));
     setSelectedIds(new Set()); fetchPosts();
     setBulkLoading(false);
@@ -90,7 +92,7 @@ export default function PostsPage() {
     if (!confirm("Delete this post?")) return;
     setActionLoadingId(id);
     try {
-      const res = await fetch(`${API}/api/posts/${id}`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`${API}/api/posts/${id}`, { method: "DELETE", credentials: "include", headers: authHdr() });
       const data = await res.json();
       if (data.success) {
         const next = new Set(selectedIds); next.delete(id); setSelectedIds(next);
@@ -103,7 +105,7 @@ export default function PostsPage() {
     if (!confirm("Publish this post to LinkedIn?")) return;
     setActionLoadingId(id);
     try {
-      const res = await fetch(`${API}/api/posts/${id}/publish`, { method: "POST", credentials: "include" });
+      const res = await fetch(`${API}/api/posts/${id}/publish`, { method: "POST", credentials: "include", headers: authHdr() });
       const data = await res.json();
       if (data.success) { alert("Published!"); fetchPosts(); }
     } finally { setActionLoadingId(null); }
@@ -113,7 +115,7 @@ export default function PostsPage() {
     if (!confirm("Cancel schedule?")) return;
     setActionLoadingId(id);
     try {
-      await fetch(`${API}/api/posts/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ status: "draft", scheduledAt: null }) });
+      await fetch(`${API}/api/posts/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json", ...authHdr() }, credentials: "include", body: JSON.stringify({ status: "draft", scheduledAt: null }) });
       fetchPosts();
     } finally { setActionLoadingId(null); }
   };

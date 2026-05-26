@@ -127,7 +127,7 @@ const updateResume = async (userId, resumeId, updateData) => {
       education: updateData.education !== undefined ? updateData.education : currentResume.education,
       certifications: updateData.certifications !== undefined ? updateData.certifications : currentResume.certifications,
       achievements: updateData.achievements !== undefined ? updateData.achievements : currentResume.achievements,
-      social_links: updateData.socialLinks !== undefined ? updateData.social_links : currentResume.social_links,
+      social_links: updateData.socialLinks !== undefined ? updateData.socialLinks : currentResume.social_links,
       status: updateData.status !== undefined ? updateData.status : currentResume.status,
       is_optimized: updateData.isOptimized !== undefined ? updateData.isOptimized : currentResume.is_optimized,
       ats_score: updateData.atsScore !== undefined ? updateData.atsScore : currentResume.ats_score,

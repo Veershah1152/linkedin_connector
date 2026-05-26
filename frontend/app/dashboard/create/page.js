@@ -120,7 +120,10 @@ function CreatePostPageContent() {
   const aiFileInputRef = useRef(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, { credentials: "include" })
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, { credentials: "include", headers })
       .then((r) => r.json())
       .then((d) => {
         if (d.success && d.data) {
@@ -134,7 +137,10 @@ function CreatePostPageContent() {
     if (editPostId) {
       setIsEditMode(true);
       setActiveTab("manual");
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, { credentials: "include" })
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, { credentials: "include", headers })
         .then((r) => r.json())
         .then((d) => {
           if (d.success && d.data) {
@@ -188,14 +194,25 @@ function CreatePostPageContent() {
     const fileToAnalyze = attachments[0]?.file;
     if (!prompt.trim() && !fileToAnalyze) { setErrorMsg("Enter a prompt or attach a file."); return; }
     setLoading(true); setOptions([]); setErrorMsg(""); setWarningMsg("");
+
+    // Always include Bearer token for mobile compatibility (cookies may be blocked)
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const authHeaders = token ? { "Authorization": `Bearer ${token}` } : {};
+
     try {
       if (fileToAnalyze) {
         const formData = new FormData();
         formData.append("image", fileToAnalyze);
         formData.append("tone", tone); formData.append("length", length);
-        formData.append("includeHashtags", includeHashtags); formData.append("includeEmojis", includeEmojis);
+        formData.append("includeHashtags", String(includeHashtags));
+        formData.append("includeEmojis", String(includeEmojis));
         formData.append("additionalPrompt", prompt);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/analyze-image`, { method: "POST", credentials: "include", body: formData });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/analyze-image`, {
+          method: "POST",
+          credentials: "include",
+          headers: authHeaders,
+          body: formData
+        });
         const data = await res.json();
         if (data.success) {
           const opts = (data.data.options || []).map((o) => ({ ...o, metadata: { title: data.data.title || "", org: data.data.organization || "", date: data.data.date || "" } }));
@@ -204,7 +221,12 @@ function CreatePostPageContent() {
           if (data.data.pdfFallbackUsed) setWarningMsg("⚠️ Vision unavailable — text extraction used instead.");
         } else { setErrorMsg(data.error || "Failed to analyze file."); }
       } else {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ prompt, tone, length, industry, includeHashtags, includeEmojis }) });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/ai/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          credentials: "include",
+          body: JSON.stringify({ prompt, tone, length, industry, includeHashtags, includeEmojis })
+        });
         const data = await res.json();
         if (data.success) {
           const opts = data.data.options || [];
@@ -219,6 +241,10 @@ function CreatePostPageContent() {
   const savePost = async (action, scheduledAtString = null) => {
     setErrorMsg(""); setSuccessMsg("");
     if (!generatedContent.trim()) { setErrorMsg("Post content cannot be empty."); return; }
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const authHeaders = token ? { "Authorization": `Bearer ${token}` } : {};
+
     try {
       const url = isEditMode
         ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`
@@ -228,7 +254,12 @@ function CreatePostPageContent() {
       if (action === "schedule") { payload.status = "scheduled"; payload.scheduledAt = scheduledAtString; }
       else if (action === "draft") { payload.status = "draft"; if (isEditMode) payload.scheduledAt = null; }
 
-      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(payload) });
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
       if (res.status === 401) { window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/linkedin`; return; }
       const data = await res.json();
       if (!data.success) { setErrorMsg("Failed to save: " + (data.error || "Unknown error")); return; }
@@ -239,10 +270,19 @@ function CreatePostPageContent() {
       const imgForm = new FormData();
       imgForm.append("keepImageIds", JSON.stringify(keepIds));
       newFiles.forEach((f) => imgForm.append("images", f));
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/images`, { method: "POST", credentials: "include", body: imgForm });
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/images`, {
+        method: "POST",
+        credentials: "include",
+        headers: authHeaders,
+        body: imgForm
+      });
 
       if (action === "publish") {
-        const pub = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/publish`, { method: "POST", credentials: "include" });
+        const pub = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${postId}/publish`, {
+          method: "POST",
+          credentials: "include",
+          headers: authHeaders
+        });
         const pubData = await pub.json();
         if (pubData.success) { setSuccessMsg("Published to LinkedIn!"); setTimeout(() => router.push("/dashboard/posts"), 1000); }
         else setErrorMsg("Saved but publish failed: " + pubData.error);
@@ -266,8 +306,14 @@ function CreatePostPageContent() {
 
   const handleDeletePost = async () => {
     if (!editPostId || !confirm("Delete this post?")) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const authHeaders = token ? { "Authorization": `Bearer ${token}` } : {};
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, { method: "DELETE", credentials: "include" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${editPostId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: authHeaders
+      });
       const data = await res.json();
       if (data.success) { setSuccessMsg("Deleted!"); setTimeout(() => router.push("/dashboard/posts"), 1000); }
       else setErrorMsg("Failed to delete: " + (data.error || "Unknown"));

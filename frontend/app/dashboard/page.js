@@ -29,8 +29,12 @@ export default function DashboardPage() {
 
   const fetchUser = async () => {
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/me`, {
         credentials: "include",
+        headers,
       });
       const data = await res.json();
       if (data.success) setUser(data.data);
@@ -41,8 +45,12 @@ export default function DashboardPage() {
 
   const fetchPosts = async () => {
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+      const headers = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts`, {
         credentials: "include",
+        headers,
       });
       const data = await res.json();
       if (data.success) setPosts(data.posts || []);
@@ -61,10 +69,14 @@ export default function DashboardPage() {
   const handleDelete = async (id) => {
     if (!confirm("Delete this post?")) return;
     setActionLoadingId(id);
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${id}`, {
         method: "DELETE",
         credentials: "include",
+        headers,
       });
       const data = await res.json();
       if (data.success) fetchPosts();
@@ -79,10 +91,14 @@ export default function DashboardPage() {
   const handlePublishNow = async (id) => {
     if (!confirm("Publish this post to LinkedIn immediately?")) return;
     setActionLoadingId(id);
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${id}/publish`, {
         method: "POST",
         credentials: "include",
+        headers,
       });
       const data = await res.json();
       if (data.success) { alert("Published!"); fetchPosts(); }
@@ -97,10 +113,13 @@ export default function DashboardPage() {
   const handleUnschedule = async (id) => {
     if (!confirm("Cancel schedule and move to drafts?")) return;
     setActionLoadingId(id);
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/posts/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         credentials: "include",
         body: JSON.stringify({ status: "draft", scheduledAt: null }),
       });
