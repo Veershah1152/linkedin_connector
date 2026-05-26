@@ -183,6 +183,9 @@ function ResumeEditorContent() {
   const resumeId = searchParams.get("id");
   const toast = useToast();
 
+  const previewPanelRef = useRef(null);
+  const [scale, setScale] = useState(0.58);
+
   const [resume, setResume] = useState(null);
   const [previewResume, setPreviewResume] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -213,6 +216,20 @@ function ResumeEditorContent() {
   useEffect(() => {
     if (resumeId) fetchResume();
   }, [resumeId]);
+
+  useEffect(() => {
+    if (!previewPanelRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const width = entry.contentRect.width;
+        const availableWidth = width - 32;
+        const newScale = Math.min(availableWidth / 793.7, 1);
+        setScale(newScale);
+      }
+    });
+    resizeObserver.observe(previewPanelRef.current);
+    return () => resizeObserver.disconnect();
+  }, [loading]);
 
   useEffect(() => {
     if (!resume) return;
@@ -306,6 +323,7 @@ function ResumeEditorContent() {
   };
 
   const removeArrayItem = (field, index) => {
+    if (!confirm("Are you sure you want to remove this item? This change will auto-save immediately.")) return;
     setResume(prev => {
       const next = { ...prev };
       next[field] = [...prev[field]];
@@ -1056,7 +1074,7 @@ function ResumeEditorContent() {
       </div>
 
       {/* Right Preview Panel: Sticky scaled down paper */}
-      <div className={`editor-preview-panel ${mobileTab === "edit" ? "mobile-panel-hidden" : ""}`} style={{
+      <div ref={previewPanelRef} className={`editor-preview-panel ${mobileTab === "edit" ? "mobile-panel-hidden" : ""}`} style={{
         width: "42vw",
         maxWidth: 580,
         flexShrink: 0,
@@ -1108,13 +1126,14 @@ function ResumeEditorContent() {
 
         {/* Paper Container scaled down mathematically to fit any viewport width */}
         <div style={{
-          height: "calc(1122.5px * var(--resume-scale))",
-          width: "calc(793.7px * var(--resume-scale))",
+          height: 1122.5 * scale,
+          width: 793.7 * scale,
           overflow: "hidden",
-          margin: "0 auto"
+          margin: "0 auto",
+          transition: "width 0.15s ease, height 0.15s ease"
         }}>
           <div style={{
-            transform: "scale(var(--resume-scale))",
+            transform: `scale(${scale})`,
             transformOrigin: "top left",
             width: "210mm",
             height: "297mm",

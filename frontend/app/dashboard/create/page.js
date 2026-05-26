@@ -450,6 +450,7 @@ function CreatePostPageContent() {
                 onMouseEnter={e => e.currentTarget.style.borderColor = T.primaryLight}
                 onMouseLeave={e => e.currentTarget.style.borderColor = T.border}
               >
+                <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={(e) => { addFilesToAttachments(Array.from(e.target.files)); e.target.value = ""; }} accept="image/*,.pdf,application/pdf" multiple />
                 {attachments.length === 0 ? (
                   <div style={{ padding: "24px 0" }}>
                     <div style={{ width: 48, height: 48, borderRadius: 12, background: T.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -457,10 +458,9 @@ function CreatePostPageContent() {
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: T.fg, marginBottom: 8 }}>Drag & drop files here</div>
                     <div style={{ fontSize: 13, color: T.mutedLight, marginBottom: 16 }}>PDF certificate or images · max 10MB each</div>
-                    <label style={{ ...btnSecondary, padding: "8px 16px", fontSize: 13, margin: "0 auto", display: "inline-flex" }}>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...btnSecondary, padding: "8px 16px", fontSize: 13, margin: "0 auto", display: "inline-flex" }}>
                       Browse files
-                      <input type="file" ref={fileInputRef} style={{ display: "none" }} onChange={(e) => addFilesToAttachments(Array.from(e.target.files))} accept="image/*,.pdf,application/pdf" multiple />
-                    </label>
+                    </button>
                   </div>
                 ) : (
                   <div>
@@ -536,7 +536,7 @@ function CreatePostPageContent() {
                 <button style={{ ...btnPrimary, padding: "8px 20px", fontSize: 13, display: "inline-flex" }}>
                   <UploadCloud size={16} /> Upload File
                 </button>
-                <input type="file" ref={aiFileInputRef} style={{ display: "none" }} onChange={(e) => addFilesToAttachments(Array.from(e.target.files))} accept="image/*,.pdf,application/pdf" />
+                <input type="file" ref={aiFileInputRef} style={{ display: "none" }} onChange={(e) => { addFilesToAttachments(Array.from(e.target.files)); e.target.value = ""; }} accept="image/*,.pdf,application/pdf" />
                 
                 {attachments.length > 0 && (
                   <div style={{ marginTop: 24, display: "flex", flexDirection: "column", alignItems: "center" }}>

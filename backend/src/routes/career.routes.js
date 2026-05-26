@@ -509,4 +509,20 @@ router.post('/certifications/:id/publish', async (req, res, next) => {
   }
 });
 
+/**
+ * DELETE /api/career/certifications/:id
+ * Delete a certification from user's vault
+ */
+router.delete('/certifications/:id', async (req, res, next) => {
+  try {
+    const result = await certificationService.deleteCertification(
+      req.user.userId,
+      req.params.id
+    );
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

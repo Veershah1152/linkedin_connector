@@ -202,10 +202,43 @@ const publishCertificationToLinkedIn = async (userId, certId) => {
   };
 };
 
+/**
+ * Delete certification from user's vault
+ */
+const deleteCertification = async (userId, certId) => {
+  const { data, error: fetchError } = await supabaseAdmin
+    .from('certifications_uploads')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('id', certId)
+    .single();
+
+  if (fetchError || !data) {
+    throw new AppError('Certification not found', 404);
+  }
+
+  const { error: deleteError } = await supabaseAdmin
+    .from('certifications_uploads')
+    .delete()
+    .eq('user_id', userId)
+    .eq('id', certId);
+
+  if (deleteError) {
+    console.error('Delete certification error:', deleteError);
+    throw new AppError('Failed to delete certification', 500);
+  }
+
+  return {
+    success: true,
+    message: 'Certification deleted successfully.'
+  };
+};
+
 module.exports = {
   uploadCertification,
   getCertifications,
   getCertificationById,
   publishCertificationToLinkedIn,
-  generateLinkedInCertificationUrl
+  generateLinkedInCertificationUrl,
+  deleteCertification
 };

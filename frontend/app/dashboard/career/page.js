@@ -647,6 +647,8 @@ export default function CareerDashboard() {
                       value={resumeDraft.title}
                       onChange={(e) => handleDraftChange("title", e.target.value)}
                       style={inputStyle}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
                     />
                   </div>
                   <div>
@@ -657,6 +659,8 @@ export default function CareerDashboard() {
                       placeholder="e.g. Full Stack Developer"
                       onChange={(e) => handleDraftChange("target_role", e.target.value)}
                       style={inputStyle}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
                     />
                   </div>
                 </div>
@@ -668,6 +672,8 @@ export default function CareerDashboard() {
                     rows={4}
                     onChange={(e) => handleDraftChange("summary", e.target.value)}
                     style={{ ...inputStyle, resize: "none", height: 112, lineHeight: 1.7 }}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
                   />
                 </div>
 
@@ -679,6 +685,8 @@ export default function CareerDashboard() {
                     placeholder="e.g. TypeScript, React, Next.js, PostgreSQL"
                     onChange={(e) => handleDraftChange("skills", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
                     style={inputStyle}
+                    onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                    onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
                   />
                   {resumeDraft.skills.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
@@ -897,8 +905,11 @@ export default function CareerDashboard() {
                       borderColor: T.border,
                       textAlign: "center",
                       cursor: "pointer",
+                      padding: "32px 20px",
                       transition: "all 0.2s ease",
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.background = T.primaryLight; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.background = T.cardBg; }}
                   >
                     <div style={{ width: 48, height: 48, borderRadius: 12, background: T.primaryLight, color: T.primary, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
                       <Award size={24} />
@@ -915,25 +926,64 @@ export default function CareerDashboard() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       <div>
                         <label style={labelStyle}>Title</label>
-                        <input type="text" value={certDetails.title} onChange={(e) => setCertDetails({...certDetails, title: e.target.value})} placeholder="e.g. AWS Solutions Architect" style={inputStyle} />
+                        <input 
+                          type="text" 
+                          value={certDetails.title} 
+                          onChange={(e) => setCertDetails({...certDetails, title: e.target.value})} 
+                          placeholder="e.g. AWS Solutions Architect" 
+                          style={inputStyle} 
+                          onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
+                        />
                       </div>
                       <div>
                         <label style={labelStyle}>Issuing Organization</label>
-                        <input type="text" value={certDetails.issuingOrganization} onChange={(e) => setCertDetails({...certDetails, issuingOrganization: e.target.value})} placeholder="e.g. Amazon Web Services" style={inputStyle} />
+                        <input 
+                          type="text" 
+                          value={certDetails.issuingOrganization} 
+                          onChange={(e) => setCertDetails({...certDetails, issuingOrganization: e.target.value})} 
+                          placeholder="e.g. Amazon Web Services" 
+                          style={inputStyle} 
+                          onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
+                        />
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <div>
                           <label style={labelStyle}>Issue Date</label>
-                          <input type="date" value={certDetails.issueDate} onChange={(e) => setCertDetails({...certDetails, issueDate: e.target.value})} style={inputStyle} />
+                          <input 
+                            type="date" 
+                            value={certDetails.issueDate} 
+                            onChange={(e) => setCertDetails({...certDetails, issueDate: e.target.value})} 
+                            style={inputStyle} 
+                            onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                            onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
+                          />
                         </div>
                         <div>
                           <label style={labelStyle}>Credential ID</label>
-                          <input type="text" value={certDetails.credentialId} onChange={(e) => setCertDetails({...certDetails, credentialId: e.target.value})} placeholder="ID" style={inputStyle} />
+                          <input 
+                            type="text" 
+                            value={certDetails.credentialId} 
+                            onChange={(e) => setCertDetails({...certDetails, credentialId: e.target.value})} 
+                            placeholder="ID" 
+                            style={inputStyle} 
+                            onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                            onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
+                          />
                         </div>
                       </div>
                       <div>
                         <label style={labelStyle}>Credential URL</label>
-                        <input type="text" value={certDetails.credentialUrl} onChange={(e) => setCertDetails({...certDetails, credentialUrl: e.target.value})} placeholder="https://..." style={inputStyle} />
+                        <input 
+                          type="text" 
+                          value={certDetails.credentialUrl} 
+                          onChange={(e) => setCertDetails({...certDetails, credentialUrl: e.target.value})} 
+                          placeholder="https://..." 
+                          style={inputStyle} 
+                          onFocus={(e) => { e.currentTarget.style.borderColor = T.primary; e.currentTarget.style.boxShadow = `0 0 0 3px rgba(99,102,241,0.15)`; }}
+                          onBlur={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.boxShadow = "none"; }}
+                        />
                       </div>
                       <button onClick={handleUploadCert} disabled={uploadingCert} style={{ ...btnPrimary, width: "100%", justifyContent: "center" }}>
                         {uploadingCert ? "Saving..." : "Save to Vault"}
@@ -970,19 +1020,48 @@ export default function CareerDashboard() {
                             ) : (
                               <span style={{ fontSize: 12, color: T.muted }}>Vault storage linked</span>
                             )}
-                            <button
-                              onClick={() => handlePublishCert(cert.id)}
-                              style={{
-                                display: "inline-flex", alignItems: "center", gap: 6,
-                                borderRadius: 8, background: "#0A66C2", color: "#FFFFFF",
-                                padding: "6px 14px", fontSize: 12, fontWeight: 600,
-                                border: "none", cursor: "pointer", transition: "opacity 0.15s",
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.9"; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
-                            >
-                              <Linkedin size={12} /> Share to LinkedIn
-                            </button>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to delete certification "${cert.title}" from your vault?`)) {
+                                    try {
+                                      const res = await api.deleteCertification(cert.id);
+                                      if (res.success) {
+                                        toast("Certification deleted from vault!", "success");
+                                        fetchCertifications();
+                                      } else {
+                                        toast("Failed to delete certification.", "error");
+                                      }
+                                    } catch (err) {
+                                      toast("Failed to delete certification: " + err.message, "error");
+                                    }
+                                  }
+                                }}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                  borderRadius: 8, background: T.destructiveLight, color: T.destructive,
+                                  padding: "6px 10px", fontSize: 12, fontWeight: 600,
+                                  border: `1px solid rgba(239, 68, 68, 0.15)`, cursor: "pointer", transition: "all 0.15s"
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = "#FEE2E2"; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = T.destructiveLight; }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                              <button
+                                onClick={() => handlePublishCert(cert.id)}
+                                style={{
+                                  display: "inline-flex", alignItems: "center", gap: 6,
+                                  borderRadius: 8, background: "#0A66C2", color: "#FFFFFF",
+                                  padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                                  border: "none", cursor: "pointer", transition: "opacity 0.15s",
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.9"; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; }}
+                              >
+                                <Linkedin size={12} /> Share
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}

@@ -114,6 +114,7 @@ export const api = {
     return request('/api/career/certifications', { method: 'POST', body: formData });
   },
   publishCertification: (id) => request(`/api/career/certifications/${id}/publish`, { method: 'POST' }),
+  deleteCertification: (id) => request(`/api/career/certifications/${id}`, { method: 'DELETE' }),
 
   // AI Chat for resume edits
   chatWithResume: (id, message, chatHistory = []) =>

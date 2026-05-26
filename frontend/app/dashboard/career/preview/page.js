@@ -43,11 +43,32 @@ function ResumePreviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const toast = useToast();
+
+  const previewPanelRef = useRef(null);
+  const [scale, setScale] = useState(0.88);
+
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState("modern");
   const [saving, setSaving] = useState(false);
   const id = searchParams.get("id");
+
+  useEffect(() => {
+    if (!previewPanelRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const width = entry.contentRect.width;
+        // Padding on preview panel: desktop is 40px left/right (total 80px), mobile is 16px (total 32px)
+        const isMobile = window.innerWidth < 768;
+        const padding = isMobile ? 32 : 80;
+        const availableWidth = width - padding;
+        const newScale = Math.min(availableWidth / 793.7, 1);
+        setScale(newScale);
+      }
+    });
+    resizeObserver.observe(previewPanelRef.current);
+    return () => resizeObserver.disconnect();
+  }, [loading]);
 
   useEffect(() => {
     if (id) {
@@ -258,7 +279,7 @@ function ResumePreviewContent() {
         </div>
 
         {/* Resume Preview Pane */}
-        <div style={{
+        <div ref={previewPanelRef} style={{
           flex: 1,
           overflowY: "auto",
           padding: "40px 32px",
@@ -277,15 +298,16 @@ function ResumePreviewContent() {
 
           {/* A4 Resume Render container scaled mathematically to fit mobile viewports */}
           <div style={{
-            height: "calc(1122.5px * var(--resume-scale))",
-            width: "calc(793.7px * var(--resume-scale))",
+            height: 1122.5 * scale,
+            width: 793.7 * scale,
             overflow: "hidden",
             margin: "0 auto",
             boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
-            borderRadius: 8
+            borderRadius: 8,
+            transition: "width 0.15s ease, height 0.15s ease"
           }}>
             <div style={{
-              transform: "scale(var(--resume-scale))",
+              transform: `scale(${scale})`,
               transformOrigin: "top left",
               width: "210mm",
               height: "297mm",
