@@ -34,6 +34,14 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
+      - name: Test API Token with Cloudflare
+        run: |
+          echo "Testing token validity against Cloudflare API..."
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Deploy Worker
         run: |
           cd backend
@@ -74,6 +82,14 @@ jobs:
             echo "::error::CLOUDFLARE_API_TOKEN is empty! Please ensure the secret is created under 'Repository secrets' (not Environment secrets)."
             exit 1
           fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Test API Token with Cloudflare
+        run: |
+          echo "Testing token validity against Cloudflare API..."
+          curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
