@@ -590,7 +590,7 @@ app.post('/api/career/certifications/:id/publish', authenticate, async (c) => {
     const userContext = c.get('user');
     const id = c.req.param('id');
     const result = await certificationService.publishCertificationToLinkedIn(userContext.userId, id);
-    return c.json({ success: true, data: result });
+    return c.json({ success: true, ...result });
   } catch (error) {
     return c.json({ success: false, error: error.message }, 500);
   }

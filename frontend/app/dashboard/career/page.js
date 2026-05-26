@@ -533,7 +533,7 @@ export default function CareerDashboard() {
           }}>
             <Sparkles size={14} /> AI Powered Workspace
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, lineHeight: 1.2, color: "#FFFFFF", marginBottom: 8 }}>
+          <h1 className="page-title" style={{ fontWeight: 800, lineHeight: 1.2, color: "#FFFFFF", marginBottom: 8 }}>
             Career & Resume Hub
           </h1>
           <p style={{ fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>
@@ -725,15 +725,15 @@ export default function CareerDashboard() {
 
                 {/* Bottom actions */}
                 <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
-                  <button onClick={() => router.push(`/dashboard/career/editor?id=${activeResume.id}`)} style={btnPrimary}>
-                    <Wand2 size={16} /> Full Split Screen Workspace
+                  <button onClick={() => router.push(`/dashboard/career/editor?id=${activeResume.id}`)} style={{ ...btnPrimary, flex: "1 1 auto", justifyContent: "center" }}>
+                    <Wand2 size={16} /> Split Screen Editor
                   </button>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button onClick={() => router.push(`/dashboard/career/preview?id=${activeResume.id}`)} style={btnSecondary}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", flex: "1 1 auto" }}>
+                    <button onClick={() => router.push(`/dashboard/career/preview?id=${activeResume.id}`)} style={{ ...btnSecondary, flex: 1, justifyContent: "center" }}>
                       <Eye size={16} /> Preview
                     </button>
-                    <button onClick={() => window.print()} style={btnSecondary}>
-                      <Printer size={16} /> Export PDF
+                    <button onClick={() => window.print()} style={{ ...btnSecondary, flex: 1, justifyContent: "center" }}>
+                      <Printer size={16} /> Print
                     </button>
                   </div>
                 </div>

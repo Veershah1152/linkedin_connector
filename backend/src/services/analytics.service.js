@@ -5,6 +5,24 @@ const { AppError } = require('../middleware/error');
  * Get dashboard analytics summary for a user
  */
 const getDashboardStats = async (userId) => {
+  // Get user details for profile-based multipliers
+  const { data: user, error: userError } = await supabaseAdmin
+    .from('users')
+    .select('plan, full_name')
+    .eq('id', userId)
+    .single();
+
+  const plan = user?.plan || 'free';
+  let planMultiplier = 1.0;
+  if (plan === 'pro') planMultiplier = 5.2;
+  if (plan === 'enterprise') planMultiplier = 18.5;
+
+  // Unique hash seed based on the profile full name
+  const profileSeed = (user?.full_name || '').split('').reduce((sum, c) => sum + c.charCodeAt(0), 0);
+  const profileMultiplier = 1.0 + (profileSeed % 10) * 0.15; // 1.0 to 2.35 multiplier
+  
+  const overallMultiplier = planMultiplier * profileMultiplier;
+
   // Total posts count by status
   const { data: posts, error: postsError } = await supabaseAdmin
     .from('posts')
@@ -36,7 +54,7 @@ const getDashboardStats = async (userId) => {
       const pubDate = post.published_at || post.created_at;
       const ageInHours = Math.max(1, (Date.now() - new Date(pubDate).getTime()) / (1000 * 60 * 60));
       
-      const views = Math.floor(ageInHours * 15 + 45);
+      const views = Math.floor((ageInHours * 15 + 45) * overallMultiplier);
       const likes = Math.floor(views * 0.07 + 3);
       const comments = Math.floor(likes * 0.15 + 1);
       const shares = Math.floor(likes * 0.08);

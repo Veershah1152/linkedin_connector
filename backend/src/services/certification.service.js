@@ -113,7 +113,7 @@ const getCertificationById = async (userId, certId) => {
  */
 const generateLinkedInCertificationUrl = (cert) => {
   const params = new URLSearchParams({
-    startTask: 'CERTIFICATION',
+    startTask: 'CERTIFICATION_NAME',
     name: cert.title,
     organizationName: cert.issuing_organization,
   });
