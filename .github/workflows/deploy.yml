@@ -26,11 +26,11 @@ jobs:
           npm ci
 
       - name: Deploy Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'backend'
-          command: deploy
+        run: |
+          cd backend
+          npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
   deploy-frontend:
     name: Deploy Frontend Pages
@@ -60,8 +60,8 @@ jobs:
           npm run build
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          workingDirectory: 'frontend'
-          command: pages deploy out --project-name=linkedin-connector-frontend
+        run: |
+          cd frontend
+          npx wrangler pages deploy out --project-name=linkedin-connector-frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
