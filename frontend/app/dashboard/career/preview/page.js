@@ -46,6 +46,7 @@ function ResumePreviewContent() {
 
   const previewPanelRef = useRef(null);
   const [scale, setScale] = useState(0.88);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -281,33 +282,58 @@ function ResumePreviewContent() {
         {/* Resume Preview Pane */}
         <div ref={previewPanelRef} style={{
           flex: 1,
-          overflowY: "auto",
-          padding: "40px 32px",
+          overflow: "auto",
+          padding: "24px 16px",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+          alignItems: isZoomed ? "flex-start" : "center",
           background: "#F3F4F6"
         }}>
           {/* Top bar */}
-          <div style={{ width: "100%", maxWidth: "210mm", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ width: "100%", maxWidth: "210mm", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
             <div style={{ fontSize: 13, color: "#6B7280" }}>
               Previewing: <span style={{ color: "#111827", fontWeight: 600 }}>{TEMPLATES.find(t => t.id === selectedTemplate)?.label} Template</span>
             </div>
-            <div style={{ fontSize: 12, color: "#6B7280" }}>A4 · 210mm × 297mm</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <button
+                onClick={() => setIsZoomed(!isZoomed)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #E5E7EB",
+                  background: "#FFFFFF",
+                  color: "#6366F1",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                  transition: "all 0.15s ease"
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "#F9FAFB"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "#FFFFFF"}
+              >
+                {isZoomed ? "📱 Fit Screen" : "🔍 Read Mode (Zoom)"}
+              </button>
+              <div className="mobile-hide" style={{ fontSize: 12, color: "#6B7280" }}>A4 · 210mm × 297mm</div>
+            </div>
           </div>
 
           {/* A4 Resume Render container scaled mathematically to fit mobile viewports */}
           <div style={{
-            height: 1122.5 * scale,
-            width: 793.7 * scale,
+            height: 1122.5 * (isZoomed ? 0.95 : scale),
+            width: 793.7 * (isZoomed ? 0.95 : scale),
             overflow: "hidden",
-            margin: "0 auto",
+            margin: isZoomed ? "0" : "0 auto",
             boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
             borderRadius: 8,
-            transition: "width 0.15s ease, height 0.15s ease"
+            transition: "width 0.15s ease, height 0.15s ease",
+            flexShrink: 0
           }}>
             <div style={{
-              transform: `scale(${scale})`,
+              transform: `scale(${isZoomed ? 0.95 : scale})`,
               transformOrigin: "top left",
               width: "210mm",
               height: "297mm",

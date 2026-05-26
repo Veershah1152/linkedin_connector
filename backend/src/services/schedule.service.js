@@ -19,7 +19,7 @@ publishQueue.process(async (job, done) => {
     
     // Create analytics record to start tracking
     await supabaseAdmin
-      .from('analytics')
+      .from('post_analytics')
       .insert({
         post_id: postId,
         views: 0,

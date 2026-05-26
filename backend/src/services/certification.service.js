@@ -57,7 +57,7 @@ const uploadCertification = async (userId, file, details) => {
 
   if (error) {
     console.error('Insert certification error:', error);
-    throw new AppError('Failed to save certification details', 500);
+    throw new AppError(`Failed to save certification details: ${error.message}`, 500);
   }
 
   // Pre-generate the LinkedIn workflow URL

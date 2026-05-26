@@ -185,6 +185,7 @@ function ResumeEditorContent() {
 
   const previewPanelRef = useRef(null);
   const [scale, setScale] = useState(0.58);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const [resume, setResume] = useState(null);
   const [previewResume, setPreviewResume] = useState(null);
@@ -1082,9 +1083,9 @@ function ResumeEditorContent() {
         borderLeft: "1px solid #E5E7EB",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
+        alignItems: isZoomed ? "flex-start" : "center",
         padding: "24px 16px",
-        overflowY: "auto",
+        overflow: "auto",
         position: "relative"
       }}>
         {/* Template Selector Top Bar */}
@@ -1097,43 +1098,67 @@ function ResumeEditorContent() {
           background: "#FFFFFF",
           padding: "10px 14px",
           borderRadius: 10,
-          border: "1px solid #E5E7EB"
+          border: "1px solid #E5E7EB",
+          gap: 8
         }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
-            Template:
-          </span>
-          <select
-            value={selectedTemplate}
-            onChange={e => handleTemplateChange(e.target.value)}
-            style={{
-              background: "#FFFFFF",
-              border: "1px solid #D1D5DB",
-              borderRadius: 6,
-              color: "#111827",
-              fontSize: 12,
-              fontWeight: 600,
-              padding: "4px 8px",
-              outline: "none",
-              cursor: "pointer"
-            }}
-          >
-            {TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.emoji} {t.label}</option>)}
-          </select>
-          <span style={{ fontSize: 11, color: "#6B7280" }}>
-            A4 scaled
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#6B7280" }}>
+              Template:
+            </span>
+            <select
+              value={selectedTemplate}
+              onChange={e => handleTemplateChange(e.target.value)}
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid #D1D5DB",
+                borderRadius: 6,
+                color: "#111827",
+                fontSize: 12,
+                fontWeight: 600,
+                padding: "4px 8px",
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              {TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.emoji} {t.label}</option>)}
+            </select>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => setIsZoomed(!isZoomed)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                padding: "4px 10px",
+                borderRadius: 6,
+                border: "1px solid #E5E7EB",
+                background: "#FFFFFF",
+                color: "#6366F1",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              {isZoomed ? "📱 Fit" : "🔍 Zoom"}
+            </button>
+            <span className="mobile-hide" style={{ fontSize: 11, color: "#6B7280" }}>
+              A4 scaled
+            </span>
+          </div>
         </div>
 
         {/* Paper Container scaled down mathematically to fit any viewport width */}
         <div style={{
-          height: 1122.5 * scale,
-          width: 793.7 * scale,
+          height: 1122.5 * (isZoomed ? 0.95 : scale),
+          width: 793.7 * (isZoomed ? 0.95 : scale),
           overflow: "hidden",
-          margin: "0 auto",
-          transition: "width 0.15s ease, height 0.15s ease"
+          margin: isZoomed ? "0" : "0 auto",
+          transition: "width 0.15s ease, height 0.15s ease",
+          flexShrink: 0
         }}>
           <div style={{
-            transform: `scale(${scale})`,
+            transform: `scale(${isZoomed ? 0.95 : scale})`,
             transformOrigin: "top left",
             width: "210mm",
             height: "297mm",

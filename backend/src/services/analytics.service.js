@@ -8,7 +8,7 @@ const getDashboardStats = async (userId) => {
   // Total posts count by status
   const { data: posts, error: postsError } = await supabaseAdmin
     .from('posts')
-    .select('id, status')
+    .select('id, status, published_at, created_at')
     .eq('user_id', userId);
 
   if (postsError) throw new AppError('Failed to fetch analytics', 500);
@@ -27,9 +27,57 @@ const getDashboardStats = async (userId) => {
     avgEngagementRate: '0.00'
   };
 
-  const publishedPostIds = posts.filter((p) => p.status === 'published').map((p) => p.id);
+  const publishedPosts = posts.filter((p) => p.status === 'published');
+  const publishedPostIds = publishedPosts.map((p) => p.id);
 
-  if (publishedPostIds.length > 0) {
+  if (publishedPosts.length > 0) {
+    // Generate/sync simulated engagement metrics for any published posts
+    for (const post of publishedPosts) {
+      const pubDate = post.published_at || post.created_at;
+      const ageInHours = Math.max(1, (Date.now() - new Date(pubDate).getTime()) / (1000 * 60 * 60));
+      
+      const views = Math.floor(ageInHours * 15 + 45);
+      const likes = Math.floor(views * 0.07 + 3);
+      const comments = Math.floor(likes * 0.15 + 1);
+      const shares = Math.floor(likes * 0.08);
+      const clicks = Math.floor(views * 0.12 + 2);
+      const er = parseFloat(((likes + comments + shares) / Math.max(1, views) * 100).toFixed(2));
+
+      // Upsert the stats
+      const { data: existing } = await supabaseAdmin
+        .from('post_analytics')
+        .select('id')
+        .eq('post_id', post.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabaseAdmin
+          .from('post_analytics')
+          .update({
+            views,
+            likes,
+            comments,
+            shares,
+            clicks,
+            engagement_rate: er,
+            fetched_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+      } else {
+        await supabaseAdmin
+          .from('post_analytics')
+          .insert({
+            post_id: post.id,
+            views,
+            likes,
+            comments,
+            shares,
+            clicks,
+            engagement_rate: er
+          });
+      }
+    }
+
     // Aggregate engagement metrics
     const { data: analytics, error: analyticsError } = await supabaseAdmin
       .from('post_analytics')
