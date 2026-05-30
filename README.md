@@ -8,6 +8,8 @@
 
 Lyra Suite (LinkForge AI) is a secure, multi-tenant SaaS application designed to unify **LinkedIn content marketing**, **post scheduling**, **engagement analytics**, and **career optimization** (including profile imports, A4 resume builders, real-time AI optimization, ATS keyword gap analysis, and LinkedIn certification vaults).
 
+![Dashboard Overview](docs/screenshots/01_dashboard_overview.png)
+
 ---
 
 ## 🌟 Core Philosophy: What Lyra Suite Solves
@@ -257,6 +259,68 @@ For production, the application is designed to compile directly into a serverles
    ```bash
    npx wrangler pages deploy out --project-name linkedin-connector-frontend
    ```
+
+---
+
+## 🖥️ How to Use the Website
+
+### Step 1 — Dashboard Overview
+After logging in with your LinkedIn account, you land on the **Overview Dashboard**. Here you get an at-a-glance view of your entire content pipeline:
+- **Stats cards** show Total Posts, Published, Scheduled, and Drafts counts.
+- **Quick Actions** let you jump straight to writing a post, using the AI Generator, or checking your schedule.
+
+![Dashboard Overview](docs/screenshots/01_dashboard_overview.png)
+
+---
+
+### Step 2 — Create a Post (Manual Mode)
+Click **Create Post** in the sidebar and select the **✍️ Manual Creator** tab.
+
+1. Type what your post is about in the **"What is this post about?"** textarea.
+2. Choose a **Tone Style** — Professional, Casual, Inspirational, Educational, or Humorous.
+3. Pick a **Post Length** — Short (~80 words), Medium (~200 words), or Long (~400 words).
+4. Toggle **Include Emojis** and **Include Hashtags** to your preference.
+5. Click **✨ Generate LinkedIn Posts** — AI-generated variants appear in the right-hand **AI Output** panel.
+
+![Create Post — Manual Mode](docs/screenshots/02_create_post_manual.png)
+
+---
+
+### Step 3 — Create a Post (AI Generator Mode)
+Switch to the **🤖 AI Generator** tab for a smarter, document-driven flow:
+
+1. **Drop or upload** a certificate, achievement image, or PDF — the AI extracts context automatically.
+2. Fill in any additional context in the textarea below.
+3. Click **Generate LinkedIn Posts** to receive multiple viral post variants crafted from your credential.
+
+![Create Post — AI Generator](docs/screenshots/03_create_post_ai.png)
+
+---
+
+### Step 4 — Manage Your Posts
+Navigate to **My Posts** to see your full content library:
+- **Filter by Status**: All, Draft, Scheduled, Published, or Failed.
+- **Filter by Source**: All, Manual, or AI-generated.
+- Each post shows its source badge (🔥 Manual / 🤖 AI), its status badge (Published, Scheduled, Draft), and the date it was posted.
+- Use the **🗑️ delete icon** on any row to remove a post.
+
+![My Posts](docs/screenshots/04_my_posts.png)
+
+---
+
+### Step 5 — Career & Resume Hub
+Click **Career & Resume** in the sidebar to access the full career management suite:
+
+| Tab | What it Does |
+|---|---|
+| **Builder** | Build an A4-ready resume with title, target role, summary, skills, and more. Auto-saved to cloud. Choose from Modern, Classic, Minimal, or Executive templates. |
+| **AI Optimizer** | Paste a job description and let AI rewrite your resume bullets using the STAR method. |
+| **ATS Scan** | Run an automated ATS compatibility check — detects missing keywords and suggests fixes. |
+| **Certifications** | Upload certificates/PDFs; generates pre-filled LinkedIn share URLs to publish directly. |
+
+Use **Import LinkedIn / CV** to auto-populate your resume from your LinkedIn profile export, or **+ Create Manually** to start fresh.
+
+![Career & Resume Hub](docs/screenshots/05_career_resume_hub.png)
 
 ---
 
